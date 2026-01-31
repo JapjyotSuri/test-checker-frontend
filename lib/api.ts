@@ -65,10 +65,51 @@ export const checkersApi = {
   remove: (id: string) => api.delete(`/checkers/${id}`),
 };
 
+export const testSeriesApi = {
+  getAll: (params?: { status?: string; page?: number; limit?: number }) =>
+    api.get("/test-series", { params }),
+  getById: (id: string) => api.get(`/test-series/${id}`),
+  create: (data: {
+    title: string;
+    description?: string;
+    price: number;
+    numberOfTests: number;
+    subject?: string;
+    status?: string;
+  }) => api.post("/test-series", data),
+  update: (
+    id: string,
+    data: Partial<{
+      title: string;
+      description: string;
+      price: number;
+      numberOfTests: number;
+      subject: string;
+      status: string;
+    }>
+  ) => api.put(`/test-series/${id}`, data),
+  delete: (id: string) => api.delete(`/test-series/${id}`),
+  linkTests: (id: string, testIds: string[]) =>
+    api.put(`/test-series/${id}/link-tests`, { testIds }),
+};
+
+export const purchasesApi = {
+  getAll: (params?: { page?: number; limit?: number }) =>
+    api.get("/purchases", { params }),
+  getMySeries: () => api.get("/purchases/my-series"),
+  create: (data: { testSeriesId: string; paymentReference?: string }) =>
+    api.post("/purchases", data),
+};
+
 export const adminApi = {
   getDashboard: () => api.get("/admin/dashboard"),
   getCheckerReport: () => api.get("/admin/reports/checkers"),
   getTestReport: () => api.get("/admin/reports/tests"),
+  getSales: () => api.get("/admin/sales"),
+  overrideAttempt: (
+    id: string,
+    data: { obtainedMarks?: number; feedback?: string }
+  ) => api.put(`/admin/attempts/${id}/override`, data),
 };
 
 export const usersApi = {

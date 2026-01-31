@@ -14,6 +14,7 @@ interface Stats {
   total_attempts: number;
   pending_attempts: number;
   completed_attempts: number;
+  total_revenue?: number;
 }
 
 interface RecentAttempt {
@@ -70,7 +71,7 @@ export default function AdminPage() {
   if (loading || authLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#1e3a8a] border-t-transparent"></div>
       </div>
     );
   }
@@ -78,8 +79,8 @@ export default function AdminPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
-        <p className="text-slate-400">Overview of your test checking platform</p>
+        <h1 className="text-2xl font-bold text-slate-800 mb-1">Admin Dashboard</h1>
+        <p className="text-slate-600">Overview of your test checking platform</p>
       </div>
 
       {/* Stats Grid */}
