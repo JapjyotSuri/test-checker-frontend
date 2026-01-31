@@ -43,7 +43,7 @@ export function useAuth() {
           setLoading(false);
           return;
         }
-        
+
         setAuthToken(token);
         const response = await authApi.getMe();
         setUser(response.data.user);
@@ -68,6 +68,21 @@ export function useAuth() {
     }
   }, [isSignedIn]);
 
+  const refetchUser = async () => {
+    if (!isSignedIn) return;
+    hasFetched.current = false;
+    try {
+      const token = await getToken();
+      if (!token) return;
+      setAuthToken(token);
+      const response = await authApi.getMe();
+      setUser(response.data.user);
+      setError(null);
+    } catch (err: unknown) {
+      console.error("Failed to refetch user:", err);
+    }
+  };
+
   return {
     user,
     clerkUser,
@@ -78,7 +93,7 @@ export function useAuth() {
     isAdmin: user?.role === "ADMIN",
     isChecker: user?.role === "CHECKER" || user?.role === "ADMIN",
     isUser: user?.role === "USER",
-    // Fallback to Clerk data if backend fails
     displayName: user?.first_name || clerkUser?.firstName || clerkUser?.emailAddresses?.[0]?.emailAddress || "User",
+    refetchUser,
   };
 }

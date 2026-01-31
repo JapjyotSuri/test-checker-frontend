@@ -1,25 +1,42 @@
 import { SignIn } from "@clerk/nextjs";
+import Link from "next/link";
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%239C92AC%22 fill-opacity=%220.08%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-40"></div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8fafc] py-8 px-4">
+      <div className="w-full max-w-[400px] mb-6 p-4 bg-white rounded-xl border border-slate-200 shadow-sm text-center">
+        <p className="text-sm text-slate-600">
+          Everyone signs up as <strong className="text-amber-800">Student</strong>. An admin can promote you to <strong className="text-[#1e3a8a]">Checker</strong> from the dashboard. Admins are set via the backend (only 2 admins).
+        </p>
+      </div>
+
       <div className="relative">
         <SignIn
           forceRedirectUrl="/dashboard"
           appearance={{
             elements: {
-              formButtonPrimary: "bg-purple-600 hover:bg-purple-700",
-              card: "bg-slate-800/90 backdrop-blur-sm border border-slate-700",
-              headerTitle: "text-white",
-              headerSubtitle: "text-slate-400",
-              formFieldLabel: "text-slate-300",
-              formFieldInput: "bg-slate-700 border-slate-600 text-white",
-              footerActionLink: "text-purple-400 hover:text-purple-300",
+              formButtonPrimary: "bg-[#1e3a8a] hover:bg-[#1e40af]",
+              card: "bg-white shadow-lg border border-slate-200",
+              headerTitle: "text-slate-800",
+              headerSubtitle: "text-slate-600",
+              formFieldLabel: "text-slate-700",
+              formFieldInput: "bg-white border-slate-300 text-slate-800",
+              footerActionLink: "text-[#1e3a8a] hover:text-[#1e40af]",
+            },
+            variables: {
+              colorPrimary: "#1e3a8a",
+              colorBackground: "#ffffff",
             },
           }}
         />
       </div>
+
+      <p className="mt-6 text-sm text-slate-500">
+        Don&apos;t have an account?{" "}
+        <Link href="/sign-up" className="text-[#1e3a8a] font-medium hover:underline">
+          Sign up
+        </Link>
+      </p>
     </div>
   );
 }

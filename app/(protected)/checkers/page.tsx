@@ -62,12 +62,12 @@ export default function CheckersPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Checkers</h1>
-          <p className="text-slate-400">Manage your test checkers</p>
+          <h1 className="text-2xl font-bold text-slate-800 mb-1">Checkers</h1>
+          <p className="text-slate-600">Manage your test checkers. Add checkers from the Students list or here.</p>
         </div>
         <Link
           href="/checkers/new"
-          className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 bg-[#1e3a8a] hover:bg-[#1e40af] text-white rounded-lg font-medium transition-colors"
         >
           <Plus className="w-5 h-5" />
           Add Checker
@@ -75,16 +75,16 @@ export default function CheckersPage() {
       </div>
 
       {checkers.length === 0 ? (
-        <div className="bg-slate-800 border border-slate-700 rounded-xl p-12 text-center">
-          <Users className="w-12 h-12 text-slate-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-white mb-2">No checkers yet</h3>
-          <p className="text-slate-400 mb-4">Add checkers to start reviewing submissions</p>
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+          <Users className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-slate-700 mb-2">No checkers yet</h3>
+          <p className="text-slate-500 mb-4">Promote students to Checker from Students or Add Checker.</p>
           <Link
             href="/checkers/new"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1e3a8a] hover:bg-[#1e40af] text-white rounded-lg font-medium transition-colors"
           >
             <Plus className="w-5 h-5" />
-            Add First Checker
+            Add Checker
           </Link>
         </div>
       ) : (
@@ -93,32 +93,32 @@ export default function CheckersPage() {
             <Link
               key={checker.id}
               href={`/checkers/${checker.id}`}
-              className="bg-slate-800 border border-slate-700 rounded-xl p-6 hover:border-purple-500 transition-colors"
+              className="bg-white rounded-xl border border-slate-200 p-6 hover:border-[#1e3a8a]/30 transition-colors"
             >
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400 font-bold text-lg">
+                <div className="w-12 h-12 bg-[#1e3a8a]/10 rounded-full flex items-center justify-center text-[#1e3a8a] font-bold text-lg">
                   {checker.first_name?.[0] || checker.email[0].toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-semibold text-white truncate">
+                  <h3 className="text-lg font-semibold text-slate-800 truncate">
                     {checker.first_name} {checker.last_name}
                   </h3>
-                  <p className="text-sm text-slate-400 flex items-center gap-1 truncate">
+                  <p className="text-sm text-slate-500 flex items-center gap-1 truncate">
                     <Mail className="w-3 h-3" />
                     {checker.email}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-slate-700">
+              <div className="mt-4 pt-4 border-t border-slate-200">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">Submissions Checked</span>
-                  <span className="text-white font-medium">{checker.total_checked}</span>
+                  <span className="text-slate-500">Submissions Checked</span>
+                  <span className="text-slate-800 font-medium">{checker.total_checked}</span>
                 </div>
                 {checker.specialization && (
                   <div className="flex items-center gap-1 mt-2">
-                    <Award className="w-4 h-4 text-purple-400" />
-                    <span className="text-sm text-slate-300">{checker.specialization}</span>
+                    <Award className="w-4 h-4 text-[#f59e0b]" />
+                    <span className="text-sm text-slate-600">{checker.specialization}</span>
                   </div>
                 )}
               </div>

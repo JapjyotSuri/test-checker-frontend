@@ -21,8 +21,16 @@ export const setAuthToken = (token: string | null) => {
 // API functions
 export const authApi = {
   getMe: () => api.get("/auth/me"),
+  /** Call after sign-up to store the user in our backend DB */
+  syncUser: () => api.post("/auth/sync"),
   updateProfile: (data: { firstName: string; lastName: string }) =>
     api.put("/auth/profile", data),
+  /** Switch own role (Student/Checker/Admin) - only when backend allows (e.g. dev or ALLOW_ROLE_SWITCH=1) */
+  switchRole: (role: "USER" | "CHECKER" | "ADMIN") =>
+    api.patch("/auth/role", { role }),
+  /** Set role chosen at sign-up (one-time, call after first redirect) */
+  setSignupRole: (role: "USER" | "CHECKER" | "ADMIN") =>
+    api.post("/auth/set-signup-role", { role }),
 };
 
 export const testsApi = {
