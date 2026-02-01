@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useEffect, useState } from "react";
-import { testsApi, setAuthToken } from "@/lib/api";
+import { testsApi, attemptsApi, setAuthToken } from "@/lib/api";
 import { useAuth as useClerkAuth } from "@clerk/nextjs";
 import { FileText, Download, Plus, Eye } from "lucide-react";
 import Link from "next/link";
@@ -27,15 +27,24 @@ export default function TestsPage() {
   const { user, isAdmin } = useAuth();
   const { getToken } = useClerkAuth();
   const [tests, setTests] = useState<Test[]>([]);
+  const [attemptByTestId, setAttemptByTestId] = useState<Record<string, { status: string }>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTests = async () => {
+    const fetchData = async () => {
       try {
         const token = await getToken();
         setAuthToken(token);
-        const response = await testsApi.getAll();
-        setTests(response.data.tests);
+        const [testsRes, attemptsRes] = await Promise.all([
+          testsApi.getAll(),
+          isAdmin ? Promise.resolve({ data: { attempts: [] } }) : attemptsApi.getAll(),
+        ]);
+        setTests(testsRes.data.tests);
+        const byTest: Record<string, { status: string }> = {};
+        (attemptsRes.data.attempts || []).forEach((a: { test: { id: string }; status: string }) => {
+          byTest[a.test.id] = { status: a.status };
+        });
+        setAttemptByTestId(byTest);
       } catch (error) {
         console.error("Failed to fetch tests:", error);
       } finally {
@@ -43,8 +52,8 @@ export default function TestsPage() {
       }
     };
 
-    fetchTests();
-  }, [getToken]);
+    fetchData();
+  }, [getToken, isAdmin]);
 
   if (loading) {
     return (
@@ -88,60 +97,87 @@ export default function TestsPage() {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tests.map((test) => (
-            <div
-              key={test.id}
-              className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden hover:border-purple-500 transition-colors"
-            >
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-blue-400" />
-                  </div>
-                  <span
-                    className={`px-2.5 py-1 rounded text-xs font-medium ${
-                      test.status === "PUBLISHED"
-                        ? "bg-green-500/20 text-green-400"
-                        : test.status === "DRAFT"
-                        ? "bg-yellow-500/20 text-yellow-400"
-                        : "bg-slate-500/20 text-slate-400"
-                    }`}
-                  >
-                    {test.status}
-                  </span>
-                </div>
-
-                <h3 className="text-lg font-semibold text-white mb-2">{test.title}</h3>
-                <p className="text-sm text-slate-400 mb-4 line-clamp-2">
-                  {test.description || "No description"}
-                </p>
-
-                <div className="flex items-center gap-4 text-sm text-slate-400 mb-4">
-                  <span>Total: {test.total_marks} marks</span>
-                  {test.duration && <span>{test.duration} mins</span>}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={`/tests/${test.id}`}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    <Eye className="w-4 h-4" />
-                    View
-                  </Link>
-                  {test.status === "PUBLISHED" && !isAdmin && (
-                    <Link
-                      href={`/tests/${test.id}/attempt`}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+          {tests.map((test) => {
+            const attempt = attemptByTestId[test.id];
+            const attempted = !!attempt;
+            const resultPending =
+              attempted && (attempt.status === "PENDING" || attempt.status === "IN_REVIEW");
+            const attemptDisabled = attempted && resultPending;
+            return (
+              <div
+                key={test.id}
+                className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden hover:border-purple-500 transition-colors"
+              >
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-blue-400" />
+                    </div>
+                    <span
+                      className={`px-2.5 py-1 rounded text-xs font-medium ${
+                        test.status === "PUBLISHED"
+                          ? "bg-green-500/20 text-green-400"
+                          : test.status === "DRAFT"
+                            ? "bg-yellow-500/20 text-yellow-400"
+                            : "bg-slate-500/20 text-slate-400"
+                      }`}
                     >
-                      <Download className="w-4 h-4" />
-                      Attempt
-                    </Link>
+                      {test.status}
+                    </span>
+                  </div>
+
+                  <h3 className="text-lg font-semibold text-white mb-2">{test.title}</h3>
+                  <p className="text-sm text-slate-400 mb-4 line-clamp-2">
+                    {test.description || "No description"}
+                  </p>
+
+                  {resultPending && (
+                    <span className="inline-block mb-2 px-2 py-0.5 rounded text-xs font-medium bg-amber-500/20 text-amber-400">
+                      Result yet to be added
+                    </span>
                   )}
+
+                  <div className="flex items-center gap-4 text-sm text-slate-400 mb-4">
+                    <span>Total: {test.total_marks} marks</span>
+                    {test.duration && <span>{test.duration} mins</span>}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/tests/${test.id}`}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View
+                    </Link>
+                    {test.status === "PUBLISHED" && !isAdmin && (
+                      attemptDisabled ? (
+                        <span className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-600 text-slate-400 rounded-lg text-sm font-medium cursor-not-allowed">
+                          <Download className="w-4 h-4" />
+                          Attempt (submitted)
+                        </span>
+                      ) : attempted ? (
+                        <Link
+                          href="/attempts"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          View result
+                        </Link>
+                      ) : (
+                        <Link
+                          href={`/tests/${test.id}/attempt`}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <Download className="w-4 h-4" />
+                          Attempt
+                        </Link>
+                      )
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

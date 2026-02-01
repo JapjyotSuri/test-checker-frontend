@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { testSeriesApi, setAuthToken } from "@/lib/api";
 import { useAuth as useClerkAuth } from "@clerk/nextjs";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -20,6 +21,7 @@ interface TestSeries {
 }
 
 export default function AdminSeriesPage() {
+  const router = useRouter();
   const { getToken } = useClerkAuth();
   const { isAdmin, loading: authLoading } = useAuth();
   const [series, setSeries] = useState<TestSeries[]>([]);
@@ -109,10 +111,14 @@ export default function AdminSeriesPage() {
             </thead>
             <tbody className="divide-y divide-slate-200">
               {series.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50">
+                <tr
+                  key={s.id}
+                  onClick={() => router.push(`/admin/series/${s.id}`)}
+                  className="hover:bg-slate-50 cursor-pointer"
+                >
                   <td className="px-6 py-4 font-medium text-slate-800">{s.title}</td>
                   <td className="px-6 py-4 text-slate-600">{s.subject || "—"}</td>
-                  <td className="px-6 py-4 text-slate-600">{s.actual_test_count ?? s.number_of_tests}</td>
+                  <td className="px-6 py-4 text-slate-600">{s.actual_test_count ?? 0} / {s.number_of_tests ?? 0}</td>
                   <td className="px-6 py-4 text-slate-800 font-medium">₹{s.price}</td>
                   <td className="px-6 py-4">
                     <span
@@ -123,10 +129,11 @@ export default function AdminSeriesPage() {
                       {s.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 flex items-center gap-2">
+                  <td className="px-6 py-4 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                     <Link
-                      href={`/admin/series/${s.id}`}
+                      href={`/admin/series/${s.id}/edit`}
                       className="p-2 text-slate-600 hover:text-[#1e3a8a] hover:bg-[#1e3a8a]/5 rounded-lg"
+                      title="Edit series"
                     >
                       <Pencil className="w-4 h-4" />
                     </Link>

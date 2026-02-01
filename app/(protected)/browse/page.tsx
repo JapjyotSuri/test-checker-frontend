@@ -81,7 +81,7 @@ export default function BrowsePage() {
                   {s.description || "No description"}
                 </p>
                 <div className="flex items-center justify-between text-sm text-slate-500 mb-4">
-                  <span>{s.actual_test_count ?? s.number_of_tests} tests</span>
+                  <span>{s.number_of_tests ?? 0} tests</span>
                   <span className="font-semibold text-[#1e3a8a]">₹{s.price}</span>
                 </div>
                 <Link

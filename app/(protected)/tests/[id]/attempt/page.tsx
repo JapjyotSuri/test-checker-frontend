@@ -4,10 +4,12 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { testsApi, attemptsApi, setAuthToken } from "@/lib/api";
 import { useAuth as useClerkAuth } from "@clerk/nextjs";
-import { FileText, Upload, Clock, ArrowLeft } from "lucide-react";
+import { FileText, Upload, Clock, ArrowLeft, Download } from "lucide-react";
 import Link from "next/link";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:4000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/?$/, "") || "http://localhost:4000";
+const ATTEMPT_DURATION_SECONDS = 2 * 60 * 60; // 2 hours
 
 export default function TestAttemptPage() {
   const params = useParams();
@@ -21,24 +23,30 @@ export default function TestAttemptPage() {
     duration: number | null;
     pdf_url: string;
   } | null>(null);
+  const [existingAttempt, setExistingAttempt] = useState<{ id: string; status: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [minutes, setMinutes] = useState(60);
-  const [seconds, setSeconds] = useState(0);
+  const [timerSeconds, setTimerSeconds] = useState(ATTEMPT_DURATION_SECONDS);
+  const [timerStarted, setTimerStarted] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const fetchTest = async () => {
+    const fetchData = async () => {
       try {
         const token = await getToken();
         setAuthToken(token);
-        const res = await testsApi.getById(testId);
-        setTest(res.data.test);
-        const dur = res.data.test.duration;
-        if (dur) {
-          setMinutes(Math.floor(dur / 60));
-          setSeconds(dur % 60);
+        const [testRes, attemptsRes] = await Promise.all([
+          testsApi.getById(testId),
+          attemptsApi.getAll({ testId }),
+        ]);
+        setTest(testRes.data.test);
+        const attempts = attemptsRes.data.attempts || [];
+        if (attempts.length > 0) {
+          setExistingAttempt({
+            id: attempts[0].id,
+            status: attempts[0].status,
+          });
         }
       } catch (e) {
         setTest(null);
@@ -46,24 +54,27 @@ export default function TestAttemptPage() {
         setLoading(false);
       }
     };
-    if (testId) fetchTest();
+    if (testId) fetchData();
   }, [testId, getToken]);
 
+  // 2-hour countdown timer (starts when page loads)
   useEffect(() => {
-    if (!test?.duration || (minutes === 0 && seconds === 0)) return;
+    if (!timerStarted && test && !existingAttempt) {
+      setTimerStarted(true);
+    }
+    if (!timerStarted || existingAttempt || timerSeconds <= 0) return;
     const t = setInterval(() => {
-      setSeconds((s) => {
-        if (s > 0) return s - 1;
-        if (minutes > 0) {
-          setMinutes((m) => m - 1);
-          return 59;
-        }
-        clearInterval(t);
-        return 0;
-      });
+      setTimerSeconds((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
     return () => clearInterval(t);
-  }, [test?.duration]);
+  }, [timerStarted, existingAttempt, timerSeconds]);
+
+  const formatTimer = (total: number) => {
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -109,6 +120,39 @@ export default function TestAttemptPage() {
     );
   }
 
+  const downloadUrl = `${API_BASE}${test.pdf_url}`;
+
+  if (existingAttempt) {
+    return (
+      <div>
+        <Link
+          href="/my-tests"
+          className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </Link>
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <h1 className="text-xl font-bold text-slate-800 mb-2">{test.title}</h1>
+          <p className="text-amber-700 font-medium mb-4">
+            You have already submitted your answer sheet for this test.
+          </p>
+          <p className="text-slate-600 text-sm mb-4">
+            {existingAttempt.status === "PENDING" || existingAttempt.status === "IN_REVIEW"
+              ? "Result is yet to be added. We will notify you when it is ready."
+              : "View your result in the Results page."}
+          </p>
+          <Link
+            href="/attempts"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white font-medium rounded-lg hover:bg-[#1e40af]"
+          >
+            Go to Results
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <Link
@@ -119,7 +163,7 @@ export default function TestAttemptPage() {
         Back
       </Link>
       <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-[#1e3a8a]/10 rounded-lg flex items-center justify-center">
               <FileText className="w-6 h-6 text-[#1e3a8a]" />
@@ -129,32 +173,31 @@ export default function TestAttemptPage() {
               <p className="text-slate-600 text-sm">{test.total_marks} marks</p>
             </div>
           </div>
-          {test.duration && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-              <Clock className="w-5 h-5 text-amber-600" />
-              <span className="font-mono font-semibold text-amber-800">
-                {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
-              </span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+            <Clock className="w-5 h-5 text-amber-600" />
+            <span className="font-mono font-semibold text-amber-800">
+              Time: {formatTimer(timerSeconds)}
+            </span>
+          </div>
         </div>
 
-        <div className="mb-6">
-          <p className="text-sm font-medium text-slate-700 mb-2">Question paper</p>
+        <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+          <p className="text-sm font-medium text-slate-700 mb-2">Question paper (PDF)</p>
           <a
-            href={`${API_BASE}${test.pdf_url}`}
+            href={downloadUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-sm font-medium"
+            download={test.title || "question-paper.pdf"}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1e3a8a] text-white rounded-lg font-medium hover:bg-[#1e40af] transition-colors"
           >
-            <FileText className="w-4 h-4" />
-            View / Download PDF
+            <Download className="w-5 h-5" />
+            Download question paper
           </a>
         </div>
 
         <form onSubmit={handleSubmit}>
           <label className="block text-sm font-medium text-slate-700 mb-2">
-            Upload your answer (PDF)
+            Upload your answer sheet (PDF)
           </label>
           <input
             ref={fileRef}
@@ -162,16 +205,18 @@ export default function TestAttemptPage() {
             accept=".pdf,application/pdf"
             className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#1e3a8a]/10 file:text-[#1e3a8a] file:font-medium"
           />
-          {error && (
-            <p className="mt-2 text-sm text-red-600">{error}</p>
-          )}
+          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || timerSeconds <= 0}
             className="mt-6 w-full py-3 bg-[#1e3a8a] hover:bg-[#1e40af] disabled:opacity-50 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
           >
             <Upload className="w-5 h-5" />
-            {submitting ? "Submitting…" : "Submit"}
+            {timerSeconds <= 0
+              ? "Time's up"
+              : submitting
+                ? "Submitting…"
+                : "Submit answer sheet"}
           </button>
         </form>
       </div>
