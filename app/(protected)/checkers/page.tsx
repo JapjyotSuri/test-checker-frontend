@@ -66,7 +66,7 @@ export default function CheckersPage() {
           <p className="text-slate-600">Manage your test checkers. Add checkers from the Students list or here.</p>
         </div>
         <Link
-          href="/checkers/new"
+          href="/(protected)/checkers/new"
           className="flex items-center gap-2 px-5 py-2.5 bg-[#1e3a8a] hover:bg-[#1e40af] text-white rounded-lg font-medium transition-colors"
         >
           <Plus className="w-5 h-5" />

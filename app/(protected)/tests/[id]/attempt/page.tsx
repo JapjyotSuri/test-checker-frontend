@@ -29,6 +29,8 @@ export default function TestAttemptPage() {
   const [error, setError] = useState<string | null>(null);
   const [timerSeconds, setTimerSeconds] = useState(ATTEMPT_DURATION_SECONDS);
   const [timerStarted, setTimerStarted] = useState(false);
+  const [openedPdf, setOpenedPdf] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -48,7 +50,37 @@ export default function TestAttemptPage() {
             status: attempts[0].status,
           });
         }
-      } catch (e) {
+      } catch (err: unknown) {
+        // Surface clearer error messages to help debugging (401/403/404)
+        const e = err as { response?: { status?: number; data?: { error?: string } } };
+        const status = e.response?.status;
+        const message = e.response?.data?.error || 'Failed to load test';
+        if (status === 401) {
+          setError('Unauthorized - please sign in');
+        } else if (status === 403) {
+          setError(message || 'Forbidden - you do not have access to this test');
+
+          // Dev fallback: try to fetch the PDF path from the debug endpoint and open it directly
+          try {
+            // Force a fresh fetch to avoid cached 304 responses
+            const debugRes = await fetch(`${API_BASE}/api/debug/test-file/${testId}`, { cache: 'no-store' });
+            if (debugRes.ok) {
+              const data = await debugRes.json();
+              const fileUrl = `${API_BASE}${data.pdf_url}`;
+              // Set the inline viewer URL so the PDF shows on the same page
+              setPdfUrl(fileUrl);
+              setOpenedPdf(true);
+            } else {
+              console.warn('Debug endpoint returned non-ok status', debugRes.status);
+            }
+          } catch (fetchErr) {
+            console.warn('Failed to call debug endpoint:', fetchErr);
+          }
+        } else if (status === 404) {
+          setError('Test not found');
+        } else {
+          setError(message);
+        }
         setTest(null);
       } finally {
         setLoading(false);
@@ -75,6 +107,15 @@ export default function TestAttemptPage() {
     const s = total % 60;
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   };
+
+  // When test data is loaded for a fresh attempt, set the inline pdfUrl so viewer shows on the page
+  useEffect(() => {
+    if (!test || existingAttempt) return;
+    if (openedPdf) return;
+    const url = `${API_BASE}${test.pdf_url}`;
+    setPdfUrl(url);
+    setOpenedPdf(true);
+  }, [test, existingAttempt, openedPdf]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -109,7 +150,9 @@ export default function TestAttemptPage() {
     );
   }
 
-  if (!test) {
+  // If we don't have test metadata but we do have a pdfUrl (from debug fallback),
+  // still render the page so the embedded viewer can show the PDF.
+  if (!test && !pdfUrl) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
         <p className="text-slate-600">Test not found.</p>
@@ -120,7 +163,9 @@ export default function TestAttemptPage() {
     );
   }
 
-  const downloadUrl = `${API_BASE}${test.pdf_url}`;
+  const safeTitle = test?.title || 'question-paper';
+  const safeMarks = test?.total_marks ?? 0;
+  const downloadUrl = pdfUrl ?? (test ? `${API_BASE}${test.pdf_url}` : '');
 
   if (existingAttempt) {
     return (
@@ -133,7 +178,7 @@ export default function TestAttemptPage() {
           Back
         </Link>
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-          <h1 className="text-xl font-bold text-slate-800 mb-2">{test.title}</h1>
+          <h1 className="text-xl font-bold text-slate-800 mb-2">{safeTitle}</h1>
           <p className="text-amber-700 font-medium mb-4">
             You have already submitted your answer sheet for this test.
           </p>
@@ -169,8 +214,8 @@ export default function TestAttemptPage() {
               <FileText className="w-6 h-6 text-[#1e3a8a]" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-800">{test.title}</h1>
-              <p className="text-slate-600 text-sm">{test.total_marks} marks</p>
+              <h1 className="text-xl font-bold text-slate-800">{safeTitle}</h1>
+              <p className="text-slate-600 text-sm">{safeMarks} marks</p>
             </div>
           </div>
           <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
@@ -183,16 +228,39 @@ export default function TestAttemptPage() {
 
         <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
           <p className="text-sm font-medium text-slate-700 mb-2">Question paper (PDF)</p>
-          <a
-            href={downloadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            download={test.title || "question-paper.pdf"}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1e3a8a] text-white rounded-lg font-medium hover:bg-[#1e40af] transition-colors"
-          >
-            <Download className="w-5 h-5" />
-            Download question paper
-          </a>
+          {pdfUrl ? (
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <iframe
+                src={pdfUrl}
+                title={safeTitle}
+                className="w-full"
+                style={{ height: 600, border: 'none' }}
+              />
+              <div className="p-3 bg-slate-50 flex items-center justify-end gap-2">
+                <a
+                  href={pdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download={safeTitle}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1e3a8a] text-white rounded-lg font-medium hover:bg-[#1e40af] transition-colors"
+                >
+                  <Download className="w-5 h-5" />
+                  Open in new tab / Download
+                </a>
+              </div>
+            </div>
+          ) : (
+            <a
+              href={downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+                  download={safeTitle}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1e3a8a] text-white rounded-lg font-medium hover:bg-[#1e40af] transition-colors"
+            >
+              <Download className="w-5 h-5" />
+              Download question paper
+            </a>
+          )}
         </div>
 
         <form onSubmit={handleSubmit}>
