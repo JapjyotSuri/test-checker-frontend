@@ -19,7 +19,18 @@ export default function DashboardPage() {
     pending_attempts?: number;
     completed_attempts?: number;
   } | null>(null);
-  const [recentAttempts, setRecentAttempts] = useState<unknown[]>([]);
+  type AttemptSummary = {
+    id: string;
+    test_title?: string;
+    first_name?: string;
+    last_name?: string;
+    status?: string;
+    test?: { title: string };
+    obtained_marks?: number;
+    feedback?: string;
+  };
+
+  const [recentAttempts, setRecentAttempts] = useState<AttemptSummary[]>([]);
   const [mySeriesCount, setMySeriesCount] = useState(0);
   const [checkerStats, setCheckerStats] = useState<{
     pending_for_review?: number;
@@ -206,7 +217,7 @@ export default function DashboardPage() {
             ) : (
               <ul className="space-y-3">
                 {Array.isArray(recentAttempts) &&
-                  recentAttempts.slice(0, 5).map((a: { id: string; test_title?: string; first_name?: string; last_name?: string; status?: string }) => (
+                  recentAttempts.slice(0, 5).map((a) => (
                     <li key={a.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
                       <span className="text-slate-700">{a.test_title} — {a.first_name} {a.last_name}</span>
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${
@@ -227,8 +238,8 @@ export default function DashboardPage() {
       {isUser && Array.isArray(recentAttempts) && recentAttempts.length > 0 && (
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">Recent results</h2>
-          <ul className="space-y-3">
-            {recentAttempts.slice(0, 5).map((a: { id: string; test?: { title: string }; status?: string; obtained_marks?: number; feedback?: string }) => (
+            <ul className="space-y-3">
+            {recentAttempts.slice(0, 5).map((a) => (
               <li key={a.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
                 <span className="text-slate-700">{a.test?.title}</span>
                 <div className="flex items-center gap-2">
