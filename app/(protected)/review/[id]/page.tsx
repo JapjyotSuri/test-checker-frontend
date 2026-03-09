@@ -28,6 +28,7 @@ export default function ReviewGradingPage() {
   const [marks, setMarks] = useState("");
   const [feedback, setFeedback] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [checkedFile, setCheckedFile] = useState<File | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -67,12 +68,26 @@ export default function ReviewGradingPage() {
       setError(`Marks must be 0–${attempt?.test.total_marks}`);
       return;
     }
+    if (checkedFile && checkedFile.size > 5 * 1024 * 1024) {
+      setError("Checked PDF must be ≤ 5 MB");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
       const token = await getToken();
       setAuthToken(token);
-      await attemptsApi.grade(id, { obtainedMarks: m, feedback: feedback || undefined });
+      let payload: FormData | { obtainedMarks: number; feedback?: string };
+      if (checkedFile) {
+        const form = new FormData();
+        form.append("obtainedMarks", String(m));
+        if (feedback) form.append("feedback", feedback);
+        form.append("checkedPdf", checkedFile);
+        payload = form;
+      } else {
+        payload = { obtainedMarks: m, feedback: feedback || undefined };
+      }
+      await attemptsApi.grade(id, payload);
       router.push("/review");
     } catch (err: unknown) {
       const res = err as { response?: { data?: { error?: string } } };
@@ -183,6 +198,17 @@ export default function ReviewGradingPage() {
                   rows={4}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-[#1e3a8a]"
                   placeholder="Feedback for the student..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Upload checked sheet (PDF, max 5MB) — optional
+                </label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setCheckedFile(e.target.files?.[0] || null)}
+                  className="block w-full text-sm text-slate-600"
                 />
               </div>
               {error && <p className="text-sm text-red-600">{error}</p>}

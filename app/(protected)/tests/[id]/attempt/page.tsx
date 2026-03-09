@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { testsApi, attemptsApi, setAuthToken } from "@/lib/api";
 import { useAuth as useClerkAuth } from "@clerk/nextjs";
-import { FileText, Upload, Clock, ArrowLeft, Download } from "lucide-react";
+import { FileText, Upload, Clock, ArrowLeft, Download, Lock, Eye } from "lucide-react";
 import Link from "next/link";
 
 const API_BASE =
@@ -31,6 +31,7 @@ export default function TestAttemptPage() {
   const [timerStarted, setTimerStarted] = useState(false);
   const [openedPdf, setOpenedPdf] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [answerUrl, setAnswerUrl] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -124,6 +125,10 @@ export default function TestAttemptPage() {
       setError("Please select a PDF file");
       return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("PDF must be ≤ 5 MB");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -139,6 +144,20 @@ export default function TestAttemptPage() {
       setError(res?.response?.data?.error || "Submit failed");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const loadAnswer = async () => {
+    try {
+      const token = await getToken();
+      setAuthToken(token);
+      const res = await testsApi.getAnswer(testId);
+      const url = `${API_BASE}${res.data.downloadUrl}`;
+      setAnswerUrl(url);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: string } } };
+      setError(e?.response?.data?.error || "Answer sheet not available");
     }
   };
 
@@ -187,6 +206,29 @@ export default function TestAttemptPage() {
               ? "Result is yet to be added. We will notify you when it is ready."
               : "View your result in the Results page."}
           </p>
+          <div className="mb-4 p-4 border border-slate-200 rounded-lg bg-slate-50">
+            <p className="text-sm font-medium text-slate-700 mb-2">Answer sheet</p>
+            {existingAttempt.status === "COMPLETED" ? (
+              <button
+                type="button"
+                onClick={loadAnswer}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium"
+              >
+                <Eye className="w-4 h-4" />
+                View answer sheet
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-600 rounded-lg text-sm font-medium cursor-not-allowed"
+                title="Answer unlocks after your test is Completed"
+              >
+                <Lock className="w-4 h-4" />
+                Answer available after completion
+              </button>
+            )}
+          </div>
           <Link
             href="/attempts"
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white font-medium rounded-lg hover:bg-[#1e40af]"
@@ -261,6 +303,19 @@ export default function TestAttemptPage() {
               Download question paper
             </a>
           )}
+        </div>
+
+        <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+          <p className="text-sm font-medium text-slate-700 mb-2">Answer sheet</p>
+          <button
+            type="button"
+            disabled
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-600 rounded-lg text-sm font-medium cursor-not-allowed"
+            title="Locked until you attempt this test"
+          >
+            <Lock className="w-4 h-4" />
+            Locked until you attempt this test
+          </button>
         </div>
 
         <form onSubmit={handleSubmit}>

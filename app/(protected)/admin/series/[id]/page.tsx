@@ -41,12 +41,14 @@ export default function SeriesDetailPage() {
   const [addTitle, setAddTitle] = useState("");
   const [addSubject, setAddSubject] = useState("");
   const [addPdf, setAddPdf] = useState<File | null>(null);
+  const [addAnswerPdf, setAddAnswerPdf] = useState<File | null>(null);
   const [addSubmitting, setAddSubmitting] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editSubject, setEditSubject] = useState("");
   const [editPdf, setEditPdf] = useState<File | null>(null);
+  const [editAnswerPdf, setEditAnswerPdf] = useState<File | null>(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -87,6 +89,10 @@ export default function SeriesDetailPage() {
       setAddError("Please select a PDF file");
       return;
     }
+    if (addPdf.size > 5 * 1024 * 1024 || (addAnswerPdf && addAnswerPdf.size > 5 * 1024 * 1024)) {
+      setAddError("Each PDF must be ≤ 5 MB");
+      return;
+    }
     setAddSubmitting(true);
     try {
       const token = await getToken();
@@ -95,11 +101,13 @@ export default function SeriesDetailPage() {
       formData.append("title", addTitle.trim());
       formData.append("subject", addSubject.trim());
       formData.append("pdf", addPdf);
+      if (addAnswerPdf) formData.append("answerPdf", addAnswerPdf);
       formData.append("testSeriesId", id);
       await testsApi.create(formData);
       setAddTitle("");
       setAddSubject("");
       setAddPdf(null);
+      setAddAnswerPdf(null);
       setShowAddForm(false);
       await fetchSeries();
     } catch (err: unknown) {
@@ -126,6 +134,10 @@ export default function SeriesDetailPage() {
       setEditError("Title is required");
       return;
     }
+    if ((editPdf && editPdf.size > 5 * 1024 * 1024) || (editAnswerPdf && editAnswerPdf.size > 5 * 1024 * 1024)) {
+      setEditError("Each PDF must be ≤ 5 MB");
+      return;
+    }
     setEditSubmitting(true);
     try {
       const token = await getToken();
@@ -134,6 +146,7 @@ export default function SeriesDetailPage() {
       formData.append("title", editTitle.trim());
       formData.append("subject", editSubject.trim());
       if (editPdf) formData.append("pdf", editPdf);
+      if (editAnswerPdf) formData.append("answerPdf", editAnswerPdf);
       await testsApi.update(editingId, formData);
       setEditingId(null);
       await fetchSeries();
@@ -250,6 +263,15 @@ export default function SeriesDetailPage() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a]"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Answer PDF (optional)</label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setAddAnswerPdf(e.target.files?.[0] || null)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a]"
+                />
+              </div>
               {addError && <p className="text-sm text-red-600">{addError}</p>}
               <div className="flex gap-2">
                 <button
@@ -331,6 +353,15 @@ export default function SeriesDetailPage() {
                             type="file"
                             accept="application/pdf"
                             onChange={(e) => setEditPdf(e.target.files?.[0] || null)}
+                            className="w-full px-2 py-1.5 border border-slate-300 rounded text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">New Answer PDF (optional)</label>
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            onChange={(e) => setEditAnswerPdf(e.target.files?.[0] || null)}
                             className="w-full px-2 py-1.5 border border-slate-300 rounded text-sm"
                           />
                         </div>

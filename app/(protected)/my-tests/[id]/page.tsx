@@ -2,9 +2,9 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { testSeriesApi, attemptsApi, setAuthToken } from "@/lib/api";
+import { testSeriesApi, attemptsApi, testsApi, setAuthToken } from "@/lib/api";
 import { useAuth as useClerkAuth } from "@clerk/nextjs";
-import { FileText, Play, CheckCircle } from "lucide-react";
+import { FileText, Play, CheckCircle, Eye, Download } from "lucide-react";
 import Link from "next/link";
 
 interface Test {
@@ -14,6 +14,8 @@ interface Test {
   total_marks: number;
   duration: number | null;
   status: string;
+  pdf_url?: string;
+  pdf_file_name?: string;
 }
 
 export default function MyTestsSeriesPage() {
@@ -23,6 +25,8 @@ export default function MyTestsSeriesPage() {
   const [series, setSeries] = useState<{ title: string; tests: Test[] } | null>(null);
   const [attemptByTestId, setAttemptByTestId] = useState<Record<string, { id: string; status: string }>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/?$/, "") || "http://localhost:4000";
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,6 +52,40 @@ export default function MyTestsSeriesPage() {
     };
     if (id) fetchData();
   }, [id, getToken]);
+
+  const openQuestion = (t: Test) => {
+    if (!t.pdf_url) return;
+    const url = `${API_BASE}${t.pdf_url}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const openAnswer = async (testId: string) => {
+    setError(null);
+    try {
+      const token = await getToken();
+      setAuthToken(token);
+      const res = await testsApi.getAnswer(testId);
+      const url = `${API_BASE}${res.data.downloadUrl}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: string } } };
+      setError(e?.response?.data?.error || "Answer sheet not available");
+    }
+  };
+
+  const openChecked = async (attemptId: string) => {
+    setError(null);
+    try {
+      const token = await getToken();
+      setAuthToken(token);
+      const res = await attemptsApi.getChecked(attemptId);
+      const url = `${API_BASE}${res.data.downloadUrl}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: string } } };
+      setError(e?.response?.data?.error || "Checked sheet not available");
+    }
+  };
 
   if (loading) {
     return (
@@ -77,6 +115,7 @@ export default function MyTestsSeriesPage() {
       </Link>
       <h1 className="text-2xl font-bold text-slate-800 mb-2">{series.title}</h1>
       <p className="text-slate-600 mb-8">Select a test to take</p>
+      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
       {tests.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
@@ -113,26 +152,58 @@ export default function MyTestsSeriesPage() {
                     )}
                   </div>
                 </div>
-                {resultPending ? (
-                  <span className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-500 rounded-lg text-sm cursor-not-allowed">
-                    Take test (submitted)
-                  </span>
-                ) : attempted ? (
-                  <Link
-                    href="/attempts"
-                    className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white font-medium rounded-lg hover:bg-[#1e40af] transition-colors text-sm"
+                <div className="flex items-center gap-2">
+                  {test.pdf_url ? (
+                    <button
+                      type="button"
+                      onClick={() => openQuestion(test)}
+                      className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium"
+                      title="Open question paper"
+                    >
+                      <Download className="w-4 h-4" />
+                      Question
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => openAnswer(test.id)}
+                    className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium"
+                    title="Open answer sheet"
                   >
-                    View result
-                  </Link>
-                ) : (
-                  <Link
-                    href={`/tests/${test.id}/attempt`}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white font-medium rounded-lg hover:bg-[#1e40af] transition-colors text-sm"
-                  >
-                    <Play className="w-4 h-4" />
-                    Take test
-                  </Link>
-                )}
+                    <Eye className="w-4 h-4" />
+                    Answer
+                  </button>
+                  {resultPending ? (
+                    <span className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-500 rounded-lg text-sm cursor-not-allowed">
+                      Submitted
+                    </span>
+                  ) : attempted ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => openChecked(attempt.id)}
+                        className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Checked
+                      </button>
+                      <Link
+                        href="/attempts"
+                        className="flex items-center gap-2 px-3 py-2 bg-[#1e3a8a] text-white font-medium rounded-lg hover:bg-[#1e40af] transition-colors text-sm"
+                      >
+                        View result
+                      </Link>
+                    </>
+                  ) : (
+                    <Link
+                      href={`/tests/${test.id}/attempt`}
+                      className="flex items-center gap-2 px-3 py-2 bg-[#1e3a8a] text-white font-medium rounded-lg hover:bg-[#1e40af] transition-colors text-sm"
+                    >
+                      <Play className="w-4 h-4" />
+                      Take test
+                    </Link>
+                  )}
+                </div>
               </div>
             );
           })}

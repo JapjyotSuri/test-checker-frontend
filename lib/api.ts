@@ -37,6 +37,7 @@ export const testsApi = {
   getAll: (params?: { status?: string; page?: number; limit?: number }) =>
     api.get("/tests", { params }),
   getById: (id: string) => api.get(`/tests/${id}`),
+  getAnswer: (id: string) => api.get(`/tests/${id}/answer`),
   create: (formData: FormData) =>
     api.post("/tests", formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -58,10 +59,17 @@ export const attemptsApi = {
       headers: { "Content-Type": "multipart/form-data" },
     }),
   claim: (id: string) => api.post(`/attempts/${id}/claim`),
-  grade: (id: string, data: { obtainedMarks: number; feedback?: string }) =>
-    api.put(`/attempts/${id}/grade`, data),
+  grade: (id: string, data: FormData | { obtainedMarks: number; feedback?: string }) => {
+    if (typeof FormData !== "undefined" && data instanceof FormData) {
+      return api.put(`/attempts/${id}/grade`, data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    }
+    return api.put(`/attempts/${id}/grade`, data);
+  },
   reject: (id: string, data: { feedback: string }) =>
     api.put(`/attempts/${id}/reject`, data),
+  getChecked: (id: string) => api.get(`/attempts/${id}/checked`),
 };
 
 export const checkersApi = {

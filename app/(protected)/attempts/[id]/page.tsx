@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { attemptsApi, setAuthToken } from "@/lib/api";
 import { useAuth as useClerkAuth } from "@clerk/nextjs";
-import { Award, MessageSquare, ArrowLeft } from "lucide-react";
+import { Award, MessageSquare, ArrowLeft, Eye } from "lucide-react";
 import Link from "next/link";
 
 const statusLabel: Record<string, string> = {
@@ -31,10 +31,14 @@ export default function AttemptResultPage() {
     feedback: string | null;
     submitted_at: string;
     checked_at: string | null;
+    checked_pdf_url?: string | null;
+    checked_pdf_name?: string | null;
     test: { id: string; title: string; total_marks: number };
     checker: { first_name: string; last_name: string } | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/?$/, "") || "http://localhost:4000";
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -118,6 +122,25 @@ export default function AttemptResultPage() {
               <p className="text-xs text-slate-500 mt-2">
                 — {attempt.checker.first_name} {attempt.checker.last_name}
               </p>
+            )}
+          </div>
+        )}
+
+        {attempt.status === "COMPLETED" && (
+          <div className="mb-6">
+            <h2 className="text-sm font-semibold text-slate-700 mb-2">Checked sheet</h2>
+            {attempt.checked_pdf_url ? (
+              <a
+                href={`${API_BASE}${attempt.checked_pdf_url}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium"
+              >
+                <Eye className="w-4 h-4" />
+                View checked sheet
+              </a>
+            ) : (
+              <p className="text-sm text-slate-500">Available after checker uploads the checked sheet.</p>
             )}
           </div>
         )}
