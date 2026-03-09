@@ -81,8 +81,9 @@ export default function AdminStudentsPage() {
           <p className="text-slate-500 mt-2">Students will appear after they sign up.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <table className="w-full text-left">
+        <div className="bg-white rounded-xl border border-slate-200">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left min-w-[720px]">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="px-6 py-3 text-xs font-semibold text-slate-600 uppercase">Name</th>
@@ -130,7 +131,8 @@ export default function AdminStudentsPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       )}
     </div>

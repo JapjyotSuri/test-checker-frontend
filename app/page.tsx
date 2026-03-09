@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { FileText, CheckCircle, Users, ArrowRight } from "lucide-react";
@@ -8,6 +9,25 @@ export default async function Home() {
 
   if (userId) {
     redirect("/dashboard");
+  }
+
+  // Fetch published test series to show on the homepage grouped by category
+  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+  type SeriesItem = { id: string; title: string; subject?: string | null; price?: number | string; image_url?: string | null; category?: string | null };
+  const grouped: Record<string, SeriesItem[]> = { FOUNDATION: [], INTER: [], FINAL: [] };
+  try {
+    const res = await fetch(`${API}/test-series?status=PUBLISHED&limit=100`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      const list: SeriesItem[] = data.testSeries || [];
+      for (const s of list) {
+        const cat = (s.category || 'FOUNDATION').toUpperCase();
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(s);
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load series for homepage', e);
   }
 
   return (
@@ -104,6 +124,43 @@ export default async function Home() {
               Manage tests, assign checkers, track performance, and generate
               comprehensive reports.
             </p>
+          </div>
+        </div>
+
+        {/* Series sections */}
+        <div className="mt-12 max-w-7xl mx-auto">
+          <h2 className="text-2xl font-bold text-white mb-6">Test Series</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {['FOUNDATION', 'INTER', 'FINAL'].map((cat) => (
+              <div key={cat} className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                <h3 className="text-lg font-semibold text-white mb-4">{cat === 'FOUNDATION' ? 'Foundation' : cat === 'INTER' ? 'Inter' : 'Final'}</h3>
+                {grouped[cat] && grouped[cat].length > 0 ? (
+                  <ul className="space-y-3">
+                    {grouped[cat].map((s) => (
+                      <li key={s.id} className="flex items-center gap-3">
+                        {s.image_url ? (
+                          <Image
+                            src={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api').replace('/api','')}${s.image_url}`}
+                            alt={s.title}
+                            width={64}
+                            height={48}
+                            className="w-16 h-12 object-cover rounded-md"
+                          />
+                        ) : (
+                          <div className="w-16 h-12 bg-slate-800 rounded-md flex items-center justify-center text-sm text-slate-300">No image</div>
+                        )}
+                        <div>
+                          <a href={`/admin/series/${s.id}`} className="text-white font-medium hover:underline">{s.title}</a>
+                          <div className="text-slate-300 text-sm">{s.subject || '—'} • ₹{s.price}</div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-slate-300">No series in this category yet.</p>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </main>

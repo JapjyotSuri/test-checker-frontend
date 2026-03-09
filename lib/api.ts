@@ -68,8 +68,8 @@ export const checkersApi = {
   getAll: () => api.get("/checkers"),
   getById: (id: string) => api.get(`/checkers/${id}`),
   getMyStats: () => api.get("/checkers/me/stats"),
-  create: (data: any) => api.post("/checkers", data),
-  update: (id: string, data: any) => api.put(`/checkers/${id}`, data),
+  create: (data: { userId: string }) => api.post("/checkers", data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/checkers/${id}`, data),
   remove: (id: string) => api.delete(`/checkers/${id}`),
 };
 
@@ -77,25 +77,18 @@ export const testSeriesApi = {
   getAll: (params?: { status?: string; page?: number; limit?: number }) =>
     api.get("/test-series", { params }),
   getById: (id: string) => api.get(`/test-series/${id}`),
-  create: (data: {
-    title: string;
-    description?: string;
-    price: number;
-    numberOfTests: number;
-    subject?: string;
-    status?: string;
-  }) => api.post("/test-series", data),
-  update: (
-    id: string,
-    data: Partial<{
-      title: string;
-      description: string;
-      price: number;
-      numberOfTests: number;
-      subject: string;
-      status: string;
-    }>
-  ) => api.put(`/test-series/${id}`, data),
+  create: (data: FormData | Record<string, unknown>) => {
+    if (data instanceof FormData) {
+      return api.post("/test-series", data, { headers: { "Content-Type": "multipart/form-data" } });
+    }
+    return api.post("/test-series", data);
+  },
+  update: (id: string, data: FormData | Record<string, unknown>) => {
+    if (data instanceof FormData) {
+      return api.put(`/test-series/${id}`, data, { headers: { "Content-Type": "multipart/form-data" } });
+    }
+    return api.put(`/test-series/${id}`, data);
+  },
   delete: (id: string) => api.delete(`/test-series/${id}`),
   linkTests: (id: string, testIds: string[]) =>
     api.put(`/test-series/${id}/link-tests`, { testIds }),

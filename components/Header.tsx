@@ -6,7 +6,7 @@ import { clsx } from "clsx";
 import { useState } from "react";
 import { authApi, setAuthToken } from "@/lib/api";
 import { useAuth as useClerkAuth } from "@clerk/nextjs";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Menu } from "lucide-react";
 
 const roleLabels: Record<string, string> = {
   USER: "Student",
@@ -16,7 +16,7 @@ const roleLabels: Record<string, string> = {
 
 const ALLOW_ROLE_SWITCH = process.env.NEXT_PUBLIC_ALLOW_ROLE_SWITCH === "true";
 
-export function Header() {
+export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, displayName, refetchUser } = useAuth();
   const { getToken } = useClerkAuth();
   const [switching, setSwitching] = useState(false);
@@ -44,8 +44,16 @@ export function Header() {
   };
 
   return (
-    <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6">
+    <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6">
       <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onMenuClick}
+          className="md:hidden p-2 -ml-1 rounded-lg hover:bg-slate-100"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5 text-slate-700" />
+        </button>
         {ALLOW_ROLE_SWITCH && user ? (
           <div className="relative">
             <button

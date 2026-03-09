@@ -32,6 +32,8 @@ export default function DashboardPage() {
 
   const [recentAttempts, setRecentAttempts] = useState<AttemptSummary[]>([]);
   const [mySeriesCount, setMySeriesCount] = useState(0);
+  type SeriesItem = { id: string; title: string; subject?: string | null; price?: number | string; category?: string | null };
+  const [groupedSeries, setGroupedSeries] = useState<Record<string, SeriesItem[]>>({ FOUNDATION: [], INTER: [], FINAL: [] });
   const [checkerStats, setCheckerStats] = useState<{
     pending_for_review?: number;
     in_progress?: number;
@@ -55,6 +57,23 @@ export default function DashboardPage() {
           setMySeriesCount((res.data.series || []).length);
           const attemptsRes = await attemptsApi.getAll();
           setRecentAttempts((attemptsRes.data.attempts || []).slice(0, 5));
+          // fetch published series to show grouped categories
+          try {
+            const seriesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/test-series?status=PUBLISHED&limit=100`);
+            if (seriesRes.ok) {
+              const data = await seriesRes.json();
+              const list: SeriesItem[] = data.testSeries || [];
+              const grouped: Record<string, SeriesItem[]> = { FOUNDATION: [], INTER: [], FINAL: [] };
+              for (const s of list) {
+                const cat = (s.category || 'FOUNDATION').toUpperCase();
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push(s);
+              }
+              setGroupedSeries(grouped);
+            }
+          } catch (e) {
+            console.warn('Failed to fetch series for dashboard', e);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -259,6 +278,35 @@ export default function DashboardPage() {
           <Link href="/attempts" className="mt-4 inline-block text-[#1e3a8a] font-medium text-sm">
             View all results →
           </Link>
+        </div>
+      )}
+
+      {/* Student: series by category */}
+      {isUser && (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4">Explore series</h2>
+          <div className="grid md:grid-cols-3 gap-4">
+            {['FOUNDATION', 'INTER', 'FINAL'].map((cat) => (
+              <div key={cat} className="bg-white rounded-xl border border-slate-200 p-4">
+                <h3 className="font-semibold text-slate-800 mb-2">{cat === 'FOUNDATION' ? 'Foundation' : cat === 'INTER' ? 'Inter' : 'Final'}</h3>
+                {groupedSeries[cat] && groupedSeries[cat].length > 0 ? (
+                  <ul className="space-y-2">
+                    {groupedSeries[cat].map((s) => (
+                      <li key={s.id} className="flex items-center justify-between">
+                        <div>
+                          <div className="text-slate-700 font-medium">{s.title}</div>
+                          <div className="text-slate-500 text-sm">{s.subject || '—'}</div>
+                        </div>
+                        <div className="text-slate-600">₹{s.price}</div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-slate-500 text-sm">No series yet</p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

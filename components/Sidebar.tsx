@@ -13,6 +13,7 @@ import {
   ShoppingCart,
   FileCheck,
   Settings,
+  X,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -39,21 +40,42 @@ const navConfig = {
   ],
 };
 
-export function Sidebar() {
+export function Sidebar({
+  open = false,
+  onClose,
+}: {
+  open?: boolean;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
   const { user } = useAuth();
   const role = user?.role || "USER";
   const items = navConfig[role as keyof typeof navConfig] || navConfig.USER;
 
   return (
-    <aside className="w-64 min-h-screen bg-[#1e3a8a] text-white flex flex-col">
-      <div className="p-4 border-b border-white/10">
+    <aside
+      className={clsx(
+        "w-64 bg-[#1e3a8a] text-white flex flex-col z-40 transition-transform duration-200",
+        "fixed inset-y-0 left-0 transform -translate-x-full",
+        open && "translate-x-0",
+        "md:static md:translate-x-0 md:min-h-screen"
+      )}
+    >
+      <div className="p-4 border-b border-white/10 flex items-center justify-between">
         <Link href="/dashboard" className="flex items-center gap-2">
           <div className="w-9 h-9 bg-[#f59e0b] rounded-lg flex items-center justify-center">
             <BookOpen className="w-5 h-5 text-[#1e3a8a]" />
           </div>
           <span className="font-bold text-lg">CA Test Checker</span>
         </Link>
+        <button
+          type="button"
+          onClick={onClose}
+          className="md:hidden p-2 rounded-lg hover:bg-white/10"
+          aria-label="Close menu"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
       <nav className="flex-1 p-3 space-y-1">
         {items.map((item) => {
@@ -69,6 +91,7 @@ export function Sidebar() {
                   ? "bg-[#f59e0b] text-[#1e3a8a]"
                   : "text-white/90 hover:bg-white/10"
               )}
+              onClick={onClose}
             >
               <item.icon className="w-5 h-5 shrink-0" />
               {item.label}

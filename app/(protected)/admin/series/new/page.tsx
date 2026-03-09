@@ -19,6 +19,8 @@ export default function NewTestSeriesPage() {
   const [numberOfTests, setNumberOfTests] = useState("1");
   const [subject, setSubject] = useState("");
   const [status, setStatus] = useState("DRAFT");
+  const [category, setCategory] = useState("FOUNDATION");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,14 +37,18 @@ export default function NewTestSeriesPage() {
     try {
       const token = await getToken();
       setAuthToken(token);
-      await testSeriesApi.create({
-        title: title.trim(),
-        description: description.trim() || undefined,
-        price: parseFloat(price) || 0,
-        numberOfTests: parseInt(numberOfTests, 10) || 1,
-        subject: subject.trim() || undefined,
-        status,
-      });
+      // Build FormData so we can optionally upload an image
+      const payload = new FormData();
+      payload.append('title', title.trim());
+      if (description.trim()) payload.append('description', description.trim());
+      payload.append('price', String(parseFloat(price) || 0));
+      payload.append('numberOfTests', String(parseInt(numberOfTests, 10) || 1));
+      if (subject.trim()) payload.append('subject', subject.trim());
+      payload.append('status', status);
+      payload.append('category', category);
+      if (imageFile) payload.append('image', imageFile);
+
+      await testSeriesApi.create(payload);
       router.push("/admin/series");
     } catch (err: unknown) {
       const res = err as { response?: { data?: { error?: string } } };
@@ -128,6 +134,28 @@ export default function NewTestSeriesPage() {
               <option value="DRAFT">Draft</option>
               <option value="PUBLISHED">Published</option>
             </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-[#1e3a8a]"
+            >
+              <option value="FOUNDATION">Foundation</option>
+              <option value="INTER">Inter</option>
+              <option value="FINAL">Final</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Series image (optional)</label>
+            <input
+              type="file"
+              accept="image/png, image/jpeg, image/webp"
+              onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+              className="w-full"
+            />
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button

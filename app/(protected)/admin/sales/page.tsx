@@ -72,8 +72,9 @@ export default function AdminSalesPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <table className="w-full text-left">
+      <div className="bg-white rounded-xl border border-slate-200">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left min-w-[720px]">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="px-6 py-3 text-xs font-semibold text-slate-600 uppercase">Student</th>
@@ -108,7 +109,8 @@ export default function AdminSalesPage() {
               ))
             )}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     </div>
   );

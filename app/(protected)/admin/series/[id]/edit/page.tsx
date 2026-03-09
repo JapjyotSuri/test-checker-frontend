@@ -21,6 +21,9 @@ export default function EditTestSeriesPage() {
   const [numberOfTests, setNumberOfTests] = useState("1");
   const [subject, setSubject] = useState("");
   const [status, setStatus] = useState("DRAFT");
+  const [category, setCategory] = useState("FOUNDATION");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +51,8 @@ export default function EditTestSeriesPage() {
         setNumberOfTests(String(s.number_of_tests || 1));
         setSubject(s.subject || "");
         setStatus(s.status || "DRAFT");
+  setCategory(s.category || 'FOUNDATION');
+  setImagePreview(s.image_url ? `${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api').replace('/api','')}${s.image_url}` : null);
         setTests(s.tests || []);
         setSelectedTestIds((s.tests || []).map((t: { id: string }) => t.id));
         setAllTests(testsRes.data.tests || []);
@@ -71,14 +76,18 @@ export default function EditTestSeriesPage() {
     try {
       const token = await getToken();
       setAuthToken(token);
-      await testSeriesApi.update(id, {
-        title: title.trim(),
-        description: description.trim() || undefined,
-        price: price ? parseFloat(price) : undefined,
-        numberOfTests: numberOfTests ? parseInt(numberOfTests, 10) : undefined,
-        subject: subject.trim() || undefined,
-        status,
-      });
+      // Prepare payload - use FormData to allow optional image upload
+      const payload = new FormData();
+      payload.append('title', title.trim());
+      if (description.trim()) payload.append('description', description.trim());
+      if (price) payload.append('price', String(parseFloat(price)));
+      if (numberOfTests) payload.append('numberOfTests', String(parseInt(numberOfTests, 10)));
+      if (subject.trim()) payload.append('subject', subject.trim());
+      payload.append('status', status);
+      payload.append('category', category);
+      if (imageFile) payload.append('image', imageFile);
+
+      await testSeriesApi.update(id, payload);
       await testSeriesApi.linkTests(id, selectedTestIds);
       router.push(`/admin/series/${id}`);
     } catch (err: unknown) {
@@ -176,6 +185,31 @@ export default function EditTestSeriesPage() {
               <option value="DRAFT">Draft</option>
               <option value="PUBLISHED">Published</option>
             </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-[#1e3a8a]"
+            >
+              <option value="FOUNDATION">Foundation</option>
+              <option value="INTER">Inter</option>
+              <option value="FINAL">Final</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Series image</label>
+            {imagePreview && (
+              <img src={imagePreview} alt="series" className="w-40 h-24 object-cover rounded-md mb-2" />
+            )}
+            <input
+              type="file"
+              accept="image/png, image/jpeg, image/webp"
+              onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+              className="w-full"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Link tests to this series</label>

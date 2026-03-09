@@ -48,9 +48,10 @@ export function useAuth() {
         const response = await authApi.getMe();
         setUser(response.data.user);
         setError(null);
-      } catch (err: any) {
-        console.error("Failed to fetch user from backend:", err?.message || err);
-        setError(err?.response?.data?.error || "Failed to connect to backend");
+      } catch (err: unknown) {
+        const e = err as { response?: { data?: { error?: string } } ; message?: string };
+        console.error("Failed to fetch user from backend:", e?.message || e);
+        setError(e?.response?.data?.error || "Failed to connect to backend");
         // Still allow the app to function with Clerk user data
         setUser(null);
       } finally {

@@ -69,7 +69,7 @@ export default function AdminSeriesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Manage Test Series</h1>
           <p className="text-slate-600 mt-1">Create and edit test series for students to purchase</p>
@@ -97,8 +97,9 @@ export default function AdminSeriesPage() {
           </Link>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <table className="w-full text-left">
+        <div className="bg-white rounded-xl border border-slate-200">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left min-w-[720px]">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="px-6 py-3 text-xs font-semibold text-slate-600 uppercase">Title</th>
@@ -147,7 +148,8 @@ export default function AdminSeriesPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       )}
     </div>
