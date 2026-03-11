@@ -106,8 +106,16 @@ export const purchasesApi = {
   getAll: (params?: { page?: number; limit?: number }) =>
     api.get("/purchases", { params }),
   getMySeries: () => api.get("/purchases/my-series"),
-  create: (data: { testSeriesId: string; paymentReference?: string }) =>
+  create: (data: { testSeriesId: string; paymentReference?: string; couponCode?: string }) =>
     api.post("/purchases", data),
+};
+
+export const couponsApi = {
+  getAll: () => api.get("/coupons"),
+  validate: (code: string) => api.get("/coupons/validate", { params: { code } }),
+  create: (data: { code: string; discountPercent: number; active?: boolean }) =>
+    api.post("/coupons", data),
+  delete: (id: string) => api.delete(`/coupons/${id}`),
 };
 
 export const adminApi = {

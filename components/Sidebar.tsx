@@ -36,6 +36,7 @@ const navConfig = {
     { href: "/admin/students", label: "Students", icon: Users },
     { href: "/checkers", label: "Checkers", icon: FileCheck },
     { href: "/admin/sales", label: "Sales", icon: ShoppingCart },
+    { href: "/admin/coupons", label: "Coupons", icon: Settings },
     { href: "/admin/review", label: "Review", icon: Settings },
   ],
 };
