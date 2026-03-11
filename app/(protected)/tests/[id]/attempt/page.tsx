@@ -207,6 +207,18 @@ export default function TestAttemptPage() {
               : "View your result in the Results page."}
           </p>
           <div className="mb-4 p-4 border border-slate-200 rounded-lg bg-slate-50">
+            <p className="text-sm font-medium text-slate-700 mb-2">Question paper</p>
+            <a
+              href={downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium"
+            >
+              <Download className="w-4 h-4" />
+              View question paper
+            </a>
+          </div>
+          <div className="mb-4 p-4 border border-slate-200 rounded-lg bg-slate-50">
             <p className="text-sm font-medium text-slate-700 mb-2">Answer sheet</p>
             {existingAttempt.status === "COMPLETED" ? (
               <button

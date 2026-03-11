@@ -33,7 +33,7 @@ export default function AttemptResultPage() {
     checked_at: string | null;
     checked_pdf_url?: string | null;
     checked_pdf_name?: string | null;
-    test: { id: string; title: string; total_marks: number };
+    test: { id: string; title: string; total_marks: number; pdf_url?: string | null };
     checker: { first_name: string; last_name: string } | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -118,14 +118,31 @@ export default function AttemptResultPage() {
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-slate-700">
               {attempt.feedback}
             </div>
-            {attempt.checker && (
+            {/* {attempt.checker && (
               <p className="text-xs text-slate-500 mt-2">
                 — {attempt.checker.first_name} {attempt.checker.last_name}
               </p>
-            )}
+            )} */}
           </div>
         )}
 
+
+        <div className="mb-6">
+          <h2 className="text-sm font-semibold text-slate-700 mb-2">Question paper</h2>
+          {attempt.test.pdf_url ? (
+            <a
+              href={`${API_BASE}${attempt.test.pdf_url}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium"
+            >
+              <Eye className="w-4 h-4" />
+              View question paper
+            </a>
+          ) : (
+            <p className="text-sm text-slate-500">Not available.</p>
+          )}
+        </div>
         {attempt.status === "COMPLETED" && (
           <div className="mb-6">
             <h2 className="text-sm font-semibold text-slate-700 mb-2">Checked sheet</h2>
