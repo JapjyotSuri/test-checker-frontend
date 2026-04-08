@@ -108,6 +108,15 @@ export const purchasesApi = {
   getMySeries: () => api.get("/purchases/my-series"),
   create: (data: { testSeriesId: string; paymentReference?: string; couponCode?: string }) =>
     api.post("/purchases", data),
+  createRazorpayOrder: (data: { testSeriesId: string; couponCode?: string }) =>
+    api.post("/purchases/razorpay/order", data),
+  confirmRazorpay: (data: {
+    testSeriesId: string;
+    couponCode?: string;
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  }) => api.post("/purchases/razorpay/confirm", data),
 };
 
 export const couponsApi = {

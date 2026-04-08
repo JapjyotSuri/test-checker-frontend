@@ -7,6 +7,35 @@ import { useAuth as useClerkAuth } from "@clerk/nextjs";
 import { BookOpen, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
+type RazorpayResponse = {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+};
+
+type RazorpayOptions = {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  handler: (response: RazorpayResponse) => Promise<void> | void;
+  notes?: Record<string, string>;
+  theme?: { color: string };
+  modal?: { ondismiss?: () => void };
+};
+
+type RazorpayInstance = {
+  open: () => void;
+};
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: RazorpayOptions) => RazorpayInstance;
+  }
+}
+
 export default function CheckoutPage() {
   const params = useParams();
   const router = useRouter();
@@ -26,6 +55,7 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState("");
   const [couponPercent, setCouponPercent] = useState<number | null>(null);
   const [validating, setValidating] = useState(false);
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,6 +72,22 @@ export default function CheckoutPage() {
     };
     if (id) fetchData();
   }, [id, getToken]);
+
+  const loadRazorpayScript = async () => {
+    if (typeof window === "undefined") return false;
+    if (window.Razorpay) return true;
+
+    await new Promise<void>((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Failed to load Razorpay SDK"));
+      document.body.appendChild(script);
+    });
+
+    return !!window.Razorpay;
+  };
 
   const handleConfirm = async () => {
     if (!series) return;
@@ -79,6 +125,79 @@ export default function CheckoutPage() {
       setError(err?.response?.data?.error || "Invalid coupon");
     } finally {
       setValidating(false);
+    }
+  };
+
+  const handleRazorpayPayment = async () => {
+    if (!series) return;
+    setError(null);
+    setPaying(true);
+
+    try {
+      const loaded = await loadRazorpayScript();
+      if (!loaded || !window.Razorpay) {
+        setError("Failed to load Razorpay checkout");
+        setPaying(false);
+        return;
+      }
+
+      const token = await getToken();
+      setAuthToken(token);
+
+      const orderRes = await purchasesApi.createRazorpayOrder({
+        testSeriesId: series.id,
+        couponCode: couponPercent ? couponCode.trim().toUpperCase() : undefined,
+      });
+
+      const order = orderRes.data as {
+        orderId: string;
+        keyId: string;
+        amount: number;
+        currency: string;
+        seriesTitle: string;
+      };
+
+      const options: RazorpayOptions = {
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        name: "CA Test Checker",
+        description: order.seriesTitle,
+        order_id: order.orderId,
+        notes: {
+          testSeriesId: series.id,
+        },
+        theme: { color: "#1e3a8a" },
+        modal: {
+          ondismiss: () => setPaying(false),
+        },
+        handler: async (response) => {
+          try {
+            const confirmToken = await getToken();
+            setAuthToken(confirmToken);
+            await purchasesApi.confirmRazorpay({
+              testSeriesId: series.id,
+              couponCode: couponPercent ? couponCode.trim().toUpperCase() : undefined,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            router.push("/my-tests");
+          } catch (e: unknown) {
+            const err = e as { response?: { data?: { error?: string } } };
+            setError(err?.response?.data?.error || "Payment verification failed");
+          } finally {
+            setPaying(false);
+          }
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string } }; message?: string };
+      setError(err?.response?.data?.error || err?.message || "Unable to start Razorpay payment");
+      setPaying(false);
     }
   };
 
@@ -160,16 +279,25 @@ export default function CheckoutPage() {
             {error}
           </div>
         )}
-        <button
-          onClick={handleConfirm}
-          disabled={submitting}
-          className="w-full py-3 bg-[#f59e0b] hover:bg-amber-600 disabled:opacity-50 text-slate-900 font-semibold rounded-lg transition-colors"
-        >
-          {submitting ? "Processing…" : "Confirm purchase"}
-        </button>
-        <p className="text-xs text-slate-500 mt-4 text-center">
-          Simple checkout — no payment gateway. Purchase will be recorded.
-        </p>
+        <div className="space-y-3">
+          <button
+            onClick={handleRazorpayPayment}
+            disabled={paying}
+            className="w-full py-3 bg-[#1e3a8a] hover:bg-[#1e40af] disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
+          >
+            {paying ? "Opening Razorpay..." : "Pay with Razorpay"}
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={submitting}
+            className="w-full py-3 bg-[#f59e0b] hover:bg-amber-600 disabled:opacity-50 text-slate-900 font-semibold rounded-lg transition-colors"
+          >
+            {submitting ? "Processing…" : "Confirm purchase (Dev)"}
+          </button>
+          <p className="text-xs text-slate-500 text-center">
+            Use Razorpay for live payments. The dev button records a manual purchase.
+          </p>
+        </div>
       </div>
     </div>
   );
