@@ -67,7 +67,7 @@ export function Sidebar({
           <div className="w-9 h-9 bg-[#f59e0b] rounded-lg flex items-center justify-center">
             <BookOpen className="w-5 h-5 text-[#1e3a8a]" />
           </div>
-          <span className="font-bold text-lg">CA Test Checker</span>
+          <span className="font-bold text-lg">Ca Prep Series</span>
         </Link>
         <button
           type="button"

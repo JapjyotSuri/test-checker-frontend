@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Test Checker",
-  description: "Online test checking platform",
+  title: "Ca Prep Series",
+  description: "Online test series platform for CA preparation",
 };
 
 export default function RootLayout({

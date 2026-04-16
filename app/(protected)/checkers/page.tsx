@@ -63,7 +63,7 @@ export default function CheckersPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 mb-1">Checkers</h1>
-          <p className="text-slate-600">Manage your test checkers. Add checkers from the Students list or here.</p>
+          <p className="text-slate-600">Manage your checkers. Add checkers from the Students list or here.</p>
         </div>
         <Link
           href="/(protected)/checkers/new"
