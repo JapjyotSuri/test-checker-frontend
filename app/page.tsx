@@ -1,30 +1,33 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { FileText, CheckCircle, Users, ArrowRight } from "lucide-react";
 
 export default async function Home() {
-  // Don't redirect bots/crawlers - they should see the homepage
-  const headersList = await headers();
-  const userAgent = headersList.get("user-agent") || "";
-  const isBot = /bot|crawler|spider|scraper|wget|curl/i.test(userAgent);
-
-  if (!isBot) {
-    const { userId } = await auth();
+  let userId: string | null = null;
+  
+  try {
+    const session = await auth();
+    userId = session?.userId || null;
+    
     if (userId) {
       redirect("/dashboard");
     }
+  } catch (error) {
+    // Silently handle auth errors (bots, network issues, etc.)
+    // Continue showing homepage to unauthenticated users
+    console.debug("Auth check skipped - showing public homepage", error);
   }
 
   // Fetch published test series to show on the homepage grouped by category
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
-  let grouped: Record<string, any[]> = { FOUNDATION: [], INTER: [], FINAL: [] };
+  type SeriesItem = { id: string; title: string; subject?: string | null; price?: number | string; image_url?: string | null; category?: string | null };
+  const grouped: Record<string, SeriesItem[]> = { FOUNDATION: [], INTER: [], FINAL: [] };
   try {
     const res = await fetch(`${API}/test-series?status=PUBLISHED&limit=100`, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
-      const list = data.testSeries || [];
+      const list: SeriesItem[] = data.testSeries || [];
       for (const s of list) {
         const cat = (s.category || 'FOUNDATION').toUpperCase();
         if (!grouped[cat]) grouped[cat] = [];
@@ -36,6 +39,29 @@ export default async function Home() {
   }
 
   return (
+    <>
+      {/* JSON-LD Structured Data for Google Search */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "EducationalOrganization",
+            name: "Ca Prep Series",
+            alternateName: "caprepseries",
+            url: "https://vps.caprepseries.in",
+            description:
+              "India's trusted online test series platform for CA Foundation, Intermediate & Final exam preparation.",
+            sameAs: [],
+            offers: {
+              "@type": "AggregateOffer",
+              priceCurrency: "INR",
+              availability: "https://schema.org/InStock",
+              offerCount: Object.values(grouped).flat().length,
+            },
+          }),
+        }}
+      />
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Background pattern */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%239C92AC%22 fill-opacity=%220.05%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-40"></div>
@@ -46,7 +72,7 @@ export default async function Home() {
           <div className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center">
             <FileText className="w-6 h-6 text-white" />
           </div>
-          <span className="text-2xl font-bold text-white">TestChecker</span>
+          <span className="text-2xl font-bold text-white">Ca Prep Series</span>
         </div>
         <div className="flex items-center gap-4">
           <Link
@@ -132,38 +158,89 @@ export default async function Home() {
           </div>
         </div>
 
-        {/* Series sections */}
-        <div className="mt-12 max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold text-white mb-6">Test Series</h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            {['FOUNDATION', 'INTER', 'FINAL'].map((cat) => (
-              <div key={cat} className="bg-white/5 rounded-2xl p-6 border border-white/10">
-                <h3 className="text-lg font-semibold text-white mb-4">{cat === 'FOUNDATION' ? 'Foundation' : cat === 'INTER' ? 'Inter' : 'Final'}</h3>
-                {grouped[cat] && grouped[cat].length > 0 ? (
-                  <ul className="space-y-3">
-                    {grouped[cat].map((s) => (
-                      <li key={s.id} className="flex items-center gap-3">
-                        {s.image_url ? (
-                          // show thumbnail
-                          <img src={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api').replace('/api','')}${s.image_url}`} alt={s.title} className="w-16 h-12 object-cover rounded-md" />
-                        ) : (
-                          <div className="w-16 h-12 bg-slate-800 rounded-md flex items-center justify-center text-sm text-slate-300">No image</div>
-                        )}
-                        <div>
-                          <a href={`/admin/series/${s.id}`} className="text-white font-medium hover:underline">{s.title}</a>
-                          <div className="text-slate-300 text-sm">{s.subject || '—'} • ₹{s.price}</div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-slate-300">No series in this category yet.</p>
-                )}
-              </div>
-            ))}
+        {/* Test Series Section */}
+        <div className="mt-24 max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">Our Test Series</h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto">Choose from our curated test series designed for CA Foundation, Intermediate, and Final levels.</p>
           </div>
+
+          {['FOUNDATION', 'INTER', 'FINAL'].map((cat) => {
+            const label = cat === 'FOUNDATION' ? 'Foundation' : cat === 'INTER' ? 'Intermediate' : 'Final';
+            const gradients: Record<string, string> = {
+              FOUNDATION: 'from-blue-600 to-cyan-500',
+              INTER: 'from-purple-600 to-pink-500',
+              FINAL: 'from-amber-500 to-orange-600',
+            };
+            const bgAccents: Record<string, string> = {
+              FOUNDATION: 'bg-blue-500/20 text-blue-300 border-blue-400/30',
+              INTER: 'bg-purple-500/20 text-purple-300 border-purple-400/30',
+              FINAL: 'bg-amber-500/20 text-amber-300 border-amber-400/30',
+            };
+
+            if (!grouped[cat] || grouped[cat].length === 0) return null;
+
+            return (
+              <div key={cat} className="mb-16">
+                <div className="flex items-center gap-3 mb-8">
+                  <span className={`px-4 py-1.5 rounded-full text-sm font-semibold border ${bgAccents[cat]}`}>
+                    {label}
+                  </span>
+                  <div className="flex-1 h-px bg-white/10"></div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {grouped[cat].map((s) => (
+                    <Link
+                      key={s.id}
+                      href={`/checkout/${s.id}`}
+                      className="group relative bg-slate-800/60 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 hover:border-white/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/10"
+                    >
+                      {/* Image */}
+                      <div className="relative h-48 w-full overflow-hidden">
+                        {s.image_url ? (
+                          <img
+                            src={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api').replace('/api','')}${s.image_url}`}
+                            alt={s.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className={`w-full h-full bg-gradient-to-br ${gradients[cat]} flex items-center justify-center`}>
+                            <FileText className="w-16 h-16 text-white/40" />
+                          </div>
+                        )}
+                        {/* Gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent"></div>
+                        {/* Price badge */}
+                        <div className="absolute top-3 right-3 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-white font-bold text-sm border border-white/20">
+                          ₹{s.price}
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-5">
+                        <h4 className="text-lg font-semibold text-white mb-1 group-hover:text-purple-300 transition-colors">
+                          {s.title}
+                        </h4>
+                        <p className="text-slate-400 text-sm">{s.subject || 'General'}</p>
+                        <div className="mt-4 flex items-center justify-between">
+                          <span className={`text-xs px-2.5 py-1 rounded-full border ${bgAccents[cat]}`}>
+                            {label}
+                          </span>
+                          <span className="text-sm text-purple-400 font-medium group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                            View Details <ArrowRight className="w-4 h-4" />
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </main>
     </div>
+    </>
   );
 }
