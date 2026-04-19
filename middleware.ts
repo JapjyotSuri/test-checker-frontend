@@ -1,4 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -8,7 +10,18 @@ const isPublicRoute = createRouteMatcher([
   "/robots.txt",
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware(async (auth, req: NextRequest) => {
+  // For homepage, redirect authenticated users to dashboard
+  if (req.nextUrl.pathname === "/") {
+    const { userId } = await auth();
+    if (userId) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+    // Public users and bots continue to homepage
+    return NextResponse.next();
+  }
+
+  // For other routes, require authentication
   if (!isPublicRoute(req)) {
     await auth.protect();
   }

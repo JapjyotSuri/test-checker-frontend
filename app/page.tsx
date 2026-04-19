@@ -1,23 +1,10 @@
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
 import { FileText, CheckCircle, Users, ArrowRight } from "lucide-react";
 
 export default async function Home() {
-  let userId: string | null = null;
-  
-  try {
-    const session = await auth();
-    userId = session?.userId || null;
-    
-    if (userId) {
-      redirect("/dashboard");
-    }
-  } catch (error) {
-    // Silently handle auth errors (bots, network issues, etc.)
-    // Continue showing homepage to unauthenticated users
-    console.debug("Auth check skipped - showing public homepage", error);
-  }
+  // DO NOT call auth() here - it causes redirect errors for bots
+  // Users will be redirected via middleware if authenticated
+  // Homepage should be publicly accessible
 
   // Fetch published test series to show on the homepage grouped by category
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
@@ -193,7 +180,7 @@ export default async function Home() {
                   {grouped[cat].map((s) => (
                     <Link
                       key={s.id}
-                      href={`/checkout/${s.id}`}
+                      href={`/series/${s.id}`}
                       className="group relative bg-slate-800/60 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 hover:border-white/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/10"
                     >
                       {/* Image */}
