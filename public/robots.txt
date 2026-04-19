@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /review/
+Disallow: /attempts/
+Disallow: /checkers/
+
+Sitemap: https://vps.caprepseries.in/sitemap.xml
