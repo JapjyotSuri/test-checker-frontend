@@ -8,20 +8,11 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
   "/sitemap.xml",
   "/robots.txt",
+  "/series(.*)",  // Series detail pages are public
 ]);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
-  // For homepage, redirect authenticated users to dashboard
-  if (req.nextUrl.pathname === "/") {
-    const { userId } = await auth();
-    if (userId) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
-    // Public users and bots continue to homepage
-    return NextResponse.next();
-  }
-
-  // For other routes, require authentication
+  // For protected routes, require authentication
   if (!isPublicRoute(req)) {
     await auth.protect();
   }
