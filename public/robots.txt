@@ -1,9 +1,17 @@
 User-agent: *
 Allow: /
+Allow: /series/
 Disallow: /api/
 Disallow: /admin/
 Disallow: /review/
 Disallow: /attempts/
 Disallow: /checkers/
+Disallow: /dashboard/
+Disallow: /browse/
+Disallow: /my-tests/
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /auth/
+Disallow: /checkout/
 
 Sitemap: https://vps.caprepseries.in/sitemap.xml

@@ -187,7 +187,7 @@ export default async function Home() {
                       <div className="relative h-48 w-full overflow-hidden">
                         {s.image_url ? (
                           <img
-                            src={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api').replace('/api','')}${s.image_url}`}
+                            src={`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'}${s.image_url}`}
                             alt={s.title}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                           />

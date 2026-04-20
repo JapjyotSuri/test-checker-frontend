@@ -5,8 +5,21 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
-        disallow: ["/api/", "/admin/", "/review/", "/attempts/", "/checkers/"],
+        allow: ["/", "/series/"],
+        disallow: [
+          "/api/",
+          "/admin/",
+          "/review/",
+          "/attempts/",
+          "/checkers/",
+          "/dashboard/",
+          "/browse/",
+          "/my-tests/",
+          "/sign-in",
+          "/sign-up",
+          "/auth/",
+          "/checkout/",
+        ],
       },
     ],
     sitemap: "https://vps.caprepseries.in/sitemap.xml",

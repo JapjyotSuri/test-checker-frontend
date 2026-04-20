@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   try {
     const res = await fetch(`${API}/test-series/${id}`, {
-      cache: "no-store",
+      next: { revalidate: 3600 },
     });
     if (!res.ok) return { title: "Test Series" };
 
@@ -60,7 +60,7 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   try {
     const res = await fetch(`${API}/test-series/${id}`, {
-      cache: "no-store",
+      next: { revalidate: 3600 },
     });
     if (res.ok) {
       const data = await res.json();
@@ -128,7 +128,7 @@ export default async function SeriesDetailPage({ params }: Props) {
             <div className="md:col-span-1">
               {series.image_url && (
                 <img
-                  src={series.image_url}
+                  src={`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'}${series.image_url}`}
                   alt={series.title}
                   className="w-full h-64 object-cover rounded-lg shadow-lg"
                 />

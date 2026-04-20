@@ -1,40 +1,39 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export default clerkMiddleware((auth, req: NextRequest) => {
+export default clerkMiddleware(async (auth, req: NextRequest) => {
   const pathname = req.nextUrl.pathname;
-  
-  // Public routes - NEVER protect
-  const publicRoutes = [
-    "/",
-    "/sitemap.xml", 
-    "/robots.txt",
-  ];
-  
-  // Routes that start with these prefixes are public
-  const publicPrefixes = [
-    "/series/",
-    "/sign-in",
-    "/sign-up",
-    "/api/test-series",  // Public API endpoint
-  ];
-  
-  const isPublic = 
-    publicRoutes.includes(pathname) ||
-    publicPrefixes.some(prefix => pathname.startsWith(prefix));
-  
-  // If it's public, don't call auth.protect()
+
+  // Public routes - accessible without authentication
+  const isPublic =
+    pathname === "/" ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
+    pathname.startsWith("/sign-in") ||
+    pathname.startsWith("/sign-up") ||
+    pathname.startsWith("/series") ||
+    pathname.startsWith("/__clerk") ||
+    pathname.startsWith("/api/clerk");
+
   if (isPublic) {
-    return;
+    return NextResponse.next();
   }
-  
-  // All other routes require authentication
-  auth.protect();
+
+  // Manually check auth and redirect instead of auth.protect() which throws
+  // NEXT_REDIRECT causing unhandledRejection noise in Next.js 16 + Clerk 6
+  const { userId } = await auth();
+  if (!userId) {
+    const signInUrl = new URL("/sign-in", req.url);
+    signInUrl.searchParams.set("redirect_url", req.url);
+    return NextResponse.redirect(signInUrl, { status: 307 });
+  }
+
+  return NextResponse.next();
 });
 
 export const config = {
   matcher: [
-    // Apply middleware to all routes EXCEPT these
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
   ],
 };
