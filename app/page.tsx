@@ -11,7 +11,7 @@ export default async function Home() {
   type SeriesItem = { id: string; title: string; subject?: string | null; price?: number | string; image_url?: string | null; category?: string | null };
   const grouped: Record<string, SeriesItem[]> = { FOUNDATION: [], INTER: [], FINAL: [] };
   try {
-    const res = await fetch(`${API}/test-series?status=PUBLISHED&limit=100`, { cache: 'no-store' });
+    const res = await fetch(`${API}/test-series?status=PUBLISHED&limit=100`, { next: { revalidate: 3600 } });
     if (res.ok) {
       const data = await res.json();
       const list: SeriesItem[] = data.testSeries || [];

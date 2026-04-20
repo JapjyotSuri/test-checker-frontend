@@ -8,7 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let testSeries: any[] = [];
   try {
     const res = await fetch(`${API}/test-series?status=PUBLISHED&limit=1000`, {
-      cache: "no-store",
+      next: { revalidate: 3600 },
     });
     if (res.ok) {
       const data = await res.json();
