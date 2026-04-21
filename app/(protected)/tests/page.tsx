@@ -2,8 +2,7 @@
 
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useEffect, useState } from "react";
-import { testsApi, attemptsApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { testsApi, attemptsApi } from "@/lib/api";
 import { FileText, Download, Plus, Eye } from "lucide-react";
 import Link from "next/link";
 
@@ -25,7 +24,6 @@ interface Test {
 
 export default function TestsPage() {
   const { user, isAdmin } = useAuth();
-  const { getToken } = useClerkAuth();
   const [tests, setTests] = useState<Test[]>([]);
   const [attemptByTestId, setAttemptByTestId] = useState<Record<string, { status: string }>>({});
   const [loading, setLoading] = useState(true);
@@ -33,8 +31,6 @@ export default function TestsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const [testsRes, attemptsRes] = await Promise.all([
           testsApi.getAll(),
           isAdmin ? Promise.resolve({ data: { attempts: [] } }) : attemptsApi.getAll(),
@@ -53,7 +49,7 @@ export default function TestsPage() {
     };
 
     fetchData();
-  }, [getToken, isAdmin]);
+  }, [isAdmin]);
 
   if (loading) {
     return (

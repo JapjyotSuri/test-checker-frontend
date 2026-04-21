@@ -2,8 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { testSeriesApi, purchasesApi, couponsApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { testSeriesApi, purchasesApi, couponsApi } from "@/lib/api";
 import { BookOpen, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -40,7 +39,6 @@ export default function CheckoutPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const { getToken } = useClerkAuth();
   const [series, setSeries] = useState<{
     id: string;
     title: string;
@@ -60,8 +58,6 @@ export default function CheckoutPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const res = await testSeriesApi.getById(id);
         setSeries(res.data.testSeries);
       } catch (e) {
@@ -71,7 +67,7 @@ export default function CheckoutPage() {
       }
     };
     if (id) fetchData();
-  }, [id, getToken]);
+  }, [id]);
 
   const loadRazorpayScript = async () => {
     if (typeof window === "undefined") return false;
@@ -94,8 +90,6 @@ export default function CheckoutPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       await purchasesApi.create({
         testSeriesId: series.id,
         paymentReference: `simple-${Date.now()}`,
@@ -115,8 +109,6 @@ export default function CheckoutPage() {
     setValidating(true);
     setError(null);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       const res = await couponsApi.validate(couponCode.trim().toUpperCase());
       setCouponPercent(res.data.coupon.discount_percent);
     } catch (e: unknown) {
@@ -140,9 +132,6 @@ export default function CheckoutPage() {
         setPaying(false);
         return;
       }
-
-      const token = await getToken();
-      setAuthToken(token);
 
       const orderRes = await purchasesApi.createRazorpayOrder({
         testSeriesId: series.id,
@@ -173,8 +162,6 @@ export default function CheckoutPage() {
         },
         handler: async (response) => {
           try {
-            const confirmToken = await getToken();
-            setAuthToken(confirmToken);
             await purchasesApi.confirmRazorpay({
               testSeriesId: series.id,
               couponCode: couponPercent ? couponCode.trim().toUpperCase() : undefined,

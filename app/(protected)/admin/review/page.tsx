@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { attemptsApi, adminApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { attemptsApi, adminApi } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { FileCheck, User, Eye, Pencil } from "lucide-react";
 import Link from "next/link";
@@ -27,7 +26,6 @@ const statusLabel: Record<string, string> = {
 };
 
 export default function AdminReviewPage() {
-  const { getToken } = useClerkAuth();
   const { isAdmin, loading: authLoading } = useAuth();
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,8 +37,6 @@ export default function AdminReviewPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const res = await attemptsApi.getAll();
         setAttempts(res.data.attempts || []);
       } catch (e) {
@@ -50,7 +46,7 @@ export default function AdminReviewPage() {
       }
     };
     if (isAdmin) fetchData();
-  }, [getToken, isAdmin]);
+  }, [isAdmin]);
 
   if (loading || authLoading) {
     return (

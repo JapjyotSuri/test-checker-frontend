@@ -2,8 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { attemptsApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { attemptsApi } from "@/lib/api";
 import { Award, MessageSquare, ArrowLeft, Eye } from "lucide-react";
 import Link from "next/link";
 
@@ -24,7 +23,6 @@ const statusClass: Record<string, string> = {
 export default function AttemptResultPage() {
   const params = useParams();
   const id = params.id as string;
-  const { getToken } = useClerkAuth();
   const [attempt, setAttempt] = useState<{
     status: string;
     obtained_marks: number | null;
@@ -43,8 +41,6 @@ export default function AttemptResultPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const res = await attemptsApi.getById(id);
         setAttempt(res.data.attempt);
       } catch (e) {
@@ -54,7 +50,7 @@ export default function AttemptResultPage() {
       }
     };
     if (id) fetchData();
-  }, [id, getToken]);
+  }, [id]);
 
   if (loading) {
     return (

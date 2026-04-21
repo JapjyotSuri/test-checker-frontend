@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { checkersApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { checkersApi } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { Users, Plus, Mail, Award } from "lucide-react";
 import Link from "next/link";
@@ -20,7 +19,6 @@ interface Checker {
 }
 
 export default function CheckersPage() {
-  const { getToken } = useClerkAuth();
   const { isAdmin, loading: authLoading } = useAuth();
   const [checkers, setCheckers] = useState<Checker[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,8 +32,6 @@ export default function CheckersPage() {
   useEffect(() => {
     const fetchCheckers = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const response = await checkersApi.getAll();
         setCheckers(response.data.checkers);
       } catch (error) {
@@ -48,7 +44,7 @@ export default function CheckersPage() {
     if (isAdmin) {
       fetchCheckers();
     }
-  }, [getToken, isAdmin]);
+  }, [isAdmin]);
 
   if (loading || authLoading) {
     return (

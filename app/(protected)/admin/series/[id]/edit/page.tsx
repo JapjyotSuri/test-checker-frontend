@@ -2,8 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { testSeriesApi, testsApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { testSeriesApi, testsApi } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -13,7 +12,6 @@ export default function EditTestSeriesPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const { getToken } = useClerkAuth();
   const { isAdmin, loading: authLoading } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -38,8 +36,6 @@ export default function EditTestSeriesPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const [seriesRes, testsRes] = await Promise.all([
           testSeriesApi.getById(id),
           testsApi.getAll({}),
@@ -63,7 +59,7 @@ export default function EditTestSeriesPage() {
       }
     };
     if (id && isAdmin) fetchData();
-  }, [id, isAdmin, getToken]);
+  }, [id, isAdmin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,8 +70,6 @@ export default function EditTestSeriesPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       // Prepare payload - use FormData to allow optional image upload
       const payload = new FormData();
       payload.append('title', title.trim());

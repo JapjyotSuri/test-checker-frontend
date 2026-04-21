@@ -5,12 +5,10 @@ import { BookOpen, FolderOpen, Award, ClipboardCheck, Users, FileText, ShoppingC
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { adminApi, attemptsApi, purchasesApi, checkersApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
 import { AlertCircle } from "lucide-react";
 
 export default function DashboardPage() {
   const { user, loading: authLoading, error, isAdmin, isChecker, isUser, displayName } = useAuth();
-  const { getToken } = useClerkAuth();
   const [stats, setStats] = useState<{
     total_revenue?: number;
     total_users?: number;
@@ -43,8 +41,6 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         if (isAdmin) {
           const res = await adminApi.getDashboard();
           setStats(res.data.stats);
@@ -80,7 +76,7 @@ export default function DashboardPage() {
       }
     };
     if (!authLoading) fetchData();
-  }, [authLoading, isAdmin, isChecker, isUser, getToken]);
+  }, [authLoading, isAdmin, isChecker, isUser]);
 
   if (authLoading) {
     return (

@@ -2,8 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { attemptsApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { attemptsApi } from "@/lib/api";
 import { FileText, MessageSquare, Check, XCircle } from "lucide-react";
 import Link from "next/link";
 
@@ -13,7 +12,6 @@ export default function ReviewGradingPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const { getToken } = useClerkAuth();
   const [attempt, setAttempt] = useState<{
     id: string;
     status: string;
@@ -33,8 +31,6 @@ export default function ReviewGradingPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const res = await attemptsApi.getById(id);
         const a = res.data.attempt;
         setAttempt(a);
@@ -47,12 +43,10 @@ export default function ReviewGradingPage() {
       }
     };
     if (id) fetchData();
-  }, [id, getToken]);
+  }, [id]);
 
   const handleClaim = async () => {
     try {
-      const token = await getToken();
-      setAuthToken(token);
       await attemptsApi.claim(id);
       const res = await attemptsApi.getById(id);
       setAttempt(res.data.attempt);
@@ -75,8 +69,6 @@ export default function ReviewGradingPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       let payload: FormData | { obtainedMarks: number; feedback?: string };
       if (checkedFile) {
         const form = new FormData();
@@ -106,8 +98,6 @@ export default function ReviewGradingPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       await attemptsApi.reject(id, { feedback });
       router.push("/review");
     } catch (err: unknown) {

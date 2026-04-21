@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { testSeriesApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { testSeriesApi } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { BookOpen, Plus, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -22,7 +21,6 @@ interface TestSeries {
 
 export default function AdminSeriesPage() {
   const router = useRouter();
-  const { getToken } = useClerkAuth();
   const { isAdmin, loading: authLoading } = useAuth();
   const [series, setSeries] = useState<TestSeries[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,8 +32,6 @@ export default function AdminSeriesPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const res = await testSeriesApi.getAll();
         setSeries(res.data.testSeries || []);
       } catch (e) {
@@ -45,13 +41,11 @@ export default function AdminSeriesPage() {
       }
     };
     if (isAdmin) fetchData();
-  }, [getToken, isAdmin]);
+  }, [isAdmin]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this test series?")) return;
     try {
-      const token = await getToken();
-      setAuthToken(token);
       await testSeriesApi.delete(id);
       setSeries((prev) => prev.filter((s) => s.id !== id));
     } catch (e) {

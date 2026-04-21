@@ -1,36 +1,41 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export default clerkMiddleware(async (auth, req: NextRequest) => {
-  const pathname = req.nextUrl.pathname;
+// Public routes — no auth required
+const PUBLIC_PATHS = ["/", "/sign-in", "/sign-up", "/forgot-password", "/sitemap.xml", "/robots.txt"];
+const PUBLIC_PREFIXES = ["/series/", "/_next/", "/api/", "/uploads/"];
 
-  // Public routes - accessible without authentication
-  const isPublic =
-    pathname === "/" ||
-    pathname === "/sitemap.xml" ||
-    pathname === "/robots.txt" ||
-    pathname.startsWith("/sign-in") ||
-    pathname.startsWith("/sign-up") ||
-    pathname.startsWith("/series") ||
-    pathname.startsWith("/__clerk") ||
-    pathname.startsWith("/api/clerk");
+function isPublicPath(pathname: string): boolean {
+  if (PUBLIC_PATHS.includes(pathname)) return true;
+  return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
-  if (isPublic) {
+export function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  const userAgent = req.headers.get("user-agent") || "";
+
+  // Allow all bots and crawlers to access public content
+  const isBotOrCrawler = /bot|crawler|spider|crawling/i.test(userAgent);
+
+  if (isPublicPath(pathname) || isBotOrCrawler) {
     return NextResponse.next();
   }
 
-  // Manually check auth and redirect instead of auth.protect() which throws
-  // NEXT_REDIRECT causing unhandledRejection noise in Next.js 16 + Clerk 6
-  const { userId } = await auth();
-  if (!userId) {
+  // Check for access token in Authorization header (SSR) or cookie
+  const accessToken =
+    req.cookies.get("caprep_access_token")?.value ||
+    req.headers.get("authorization")?.replace("Bearer ", "");
+
+  // Also check localStorage-based token via a custom header set by the client
+  // (Next.js middleware can't read localStorage, so we rely on a cookie fallback)
+  if (!accessToken) {
     const signInUrl = new URL("/sign-in", req.url);
-    signInUrl.searchParams.set("redirect_url", req.url);
-    return NextResponse.redirect(signInUrl, { status: 307 });
+    signInUrl.searchParams.set("redirect_url", req.nextUrl.pathname);
+    return NextResponse.redirect(signInUrl);
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [

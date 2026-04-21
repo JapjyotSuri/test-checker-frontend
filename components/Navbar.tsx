@@ -1,15 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { FileText, LayoutDashboard, ClipboardCheck, Users, Settings } from "lucide-react";
 import { clsx } from "clsx";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export function Navbar() {
-  const { user, isAdmin, isChecker } = useAuth();
+  const { user, isAdmin, isChecker, logout } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace("/");
+  };
 
   const navItems = [
     {
@@ -98,13 +103,13 @@ export function Navbar() {
                 </span>
               </div>
             )}
-            <UserButton 
-              appearance={{
-                elements: {
-                  avatarBox: "w-9 h-9",
-                },
-              }}
-            />
+            <button
+              onClick={handleLogout}
+              className="w-9 h-9 rounded-full bg-purple-600 hover:bg-purple-700 flex items-center justify-center text-white font-semibold text-sm transition-colors"
+              title="Sign out"
+            >
+              {(user?.first_name?.[0] || user?.email?.[0] || "U").toUpperCase()}
+            </button>
           </div>
         </div>
       </div>

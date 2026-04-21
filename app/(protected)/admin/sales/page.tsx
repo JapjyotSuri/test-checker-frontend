@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { adminApi } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { ShoppingCart, TrendingUp } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -20,7 +19,6 @@ interface Purchase {
 }
 
 export default function AdminSalesPage() {
-  const { getToken } = useClerkAuth();
   const { isAdmin, loading: authLoading } = useAuth();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
@@ -33,8 +31,6 @@ export default function AdminSalesPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const res = await adminApi.getSales();
         setPurchases(res.data.purchases || []);
         setTotalRevenue(res.data.totalRevenue ?? 0);
@@ -45,7 +41,7 @@ export default function AdminSalesPage() {
       }
     };
     if (isAdmin) fetchData();
-  }, [getToken, isAdmin]);
+  }, [isAdmin]);
 
   if (loading || authLoading) {
     return (

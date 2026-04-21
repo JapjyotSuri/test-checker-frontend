@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { adminApi } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { Users, FileText, ClipboardCheck, Clock, TrendingUp } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -34,7 +33,6 @@ interface RecentTest {
 }
 
 export default function AdminPage() {
-  const { getToken } = useClerkAuth();
   const { isAdmin, loading: authLoading } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentAttempts, setRecentAttempts] = useState<RecentAttempt[]>([]);
@@ -50,8 +48,6 @@ export default function AdminPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const response = await adminApi.getDashboard();
         setStats(response.data.stats);
         setRecentAttempts(response.data.recentAttempts);
@@ -66,7 +62,7 @@ export default function AdminPage() {
     if (isAdmin) {
       fetchData();
     }
-  }, [getToken, isAdmin]);
+  }, [isAdmin]);
 
   if (loading || authLoading) {
     return (

@@ -2,8 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { testSeriesApi, attemptsApi, testsApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { testSeriesApi, attemptsApi, testsApi } from "@/lib/api";
 import { FileText, Play, CheckCircle, Eye, Download } from "lucide-react";
 import Link from "next/link";
 
@@ -21,7 +20,6 @@ interface Test {
 export default function MyTestsSeriesPage() {
   const params = useParams();
   const id = params.id as string;
-  const { getToken } = useClerkAuth();
   const [series, setSeries] = useState<{ title: string; tests: Test[] } | null>(null);
   const [attemptByTestId, setAttemptByTestId] = useState<Record<string, { id: string; status: string }>>({});
   const [loading, setLoading] = useState(true);
@@ -31,8 +29,6 @@ export default function MyTestsSeriesPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const [seriesRes, attemptsRes] = await Promise.all([
           testSeriesApi.getById(id),
           attemptsApi.getAll(),
@@ -51,7 +47,7 @@ export default function MyTestsSeriesPage() {
       }
     };
     if (id) fetchData();
-  }, [id, getToken]);
+  }, [id]);
 
   const openQuestion = (t: Test) => {
     if (!t.pdf_url) return;
@@ -62,8 +58,6 @@ export default function MyTestsSeriesPage() {
   const openAnswer = async (testId: string) => {
     setError(null);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       const res = await testsApi.getAnswer(testId);
       const url = `${API_BASE}${res.data.downloadUrl}`;
       window.open(url, "_blank", "noopener,noreferrer");
@@ -76,8 +70,6 @@ export default function MyTestsSeriesPage() {
   const openChecked = async (attemptId: string) => {
     setError(null);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       const res = await attemptsApi.getChecked(attemptId);
       const url = `${API_BASE}${res.data.downloadUrl}`;
       window.open(url, "_blank", "noopener,noreferrer");

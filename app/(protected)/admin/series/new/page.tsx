@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { testSeriesApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { testSeriesApi } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -11,9 +10,7 @@ import { redirect } from "next/navigation";
 
 export default function NewTestSeriesPage() {
   const router = useRouter();
-  const { getToken } = useClerkAuth();
-  const { isAdmin, loading: authLoading } = useAuth();
-  const [title, setTitle] = useState("");
+  const { isAdmin, loading: authLoading } = useAuth();  const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [numberOfTests, setNumberOfTests] = useState("1");
@@ -35,8 +32,6 @@ export default function NewTestSeriesPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       // Build FormData so we can optionally upload an image
       const payload = new FormData();
       payload.append('title', title.trim());

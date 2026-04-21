@@ -2,8 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { testsApi, attemptsApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { testsApi, attemptsApi } from "@/lib/api";
 import { FileText, Upload, Clock, ArrowLeft, Download, Lock, Eye } from "lucide-react";
 import Link from "next/link";
 
@@ -15,7 +14,6 @@ export default function TestAttemptPage() {
   const params = useParams();
   const router = useRouter();
   const testId = params.id as string;
-  const { getToken } = useClerkAuth();
   const [test, setTest] = useState<{
     id: string;
     title: string;
@@ -37,8 +35,6 @@ export default function TestAttemptPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const [testRes, attemptsRes] = await Promise.all([
           testsApi.getById(testId),
           attemptsApi.getAll({ testId }),
@@ -88,7 +84,7 @@ export default function TestAttemptPage() {
       }
     };
     if (testId) fetchData();
-  }, [testId, getToken]);
+  }, [testId]);
 
   // 2-hour countdown timer (starts when page loads)
   useEffect(() => {
@@ -132,8 +128,6 @@ export default function TestAttemptPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       const formData = new FormData();
       formData.append("pdf", file);
       formData.append("testId", testId);
@@ -149,8 +143,6 @@ export default function TestAttemptPage() {
 
   const loadAnswer = async () => {
     try {
-      const token = await getToken();
-      setAuthToken(token);
       const res = await testsApi.getAnswer(testId);
       const url = `${API_BASE}${res.data.downloadUrl}`;
       setAnswerUrl(url);

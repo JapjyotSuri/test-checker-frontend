@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { testSeriesApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { testSeriesApi } from "@/lib/api";
 import { BookOpen, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 
@@ -17,15 +16,12 @@ interface TestSeries {
 }
 
 export default function BrowsePage() {
-  const { getToken } = useClerkAuth();
   const [series, setSeries] = useState<TestSeries[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const res = await testSeriesApi.getAll();
         setSeries(res.data.testSeries || []);
       } catch (e) {
@@ -35,7 +31,7 @@ export default function BrowsePage() {
       }
     };
     fetchData();
-  }, [getToken]);
+  }, []);
 
   if (loading) {
     return (

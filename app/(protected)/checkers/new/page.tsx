@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usersApi, checkersApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { usersApi, checkersApi } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { Users, Mail, UserPlus, ArrowLeft } from "lucide-react";
@@ -18,7 +17,6 @@ interface User {
 
 export default function AddCheckerPage() {
   const router = useRouter();
-  const { getToken } = useClerkAuth();
   const { isAdmin, loading: authLoading } = useAuth();
   const [students, setStudents] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,8 +29,6 @@ export default function AddCheckerPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const res = await usersApi.getAll({ role: "USER" });
         setStudents(res.data.users || []);
       } catch (e) {
@@ -42,13 +38,11 @@ export default function AddCheckerPage() {
       }
     };
     if (isAdmin) fetchData();
-  }, [getToken, isAdmin]);
+  }, [isAdmin]);
 
   const handleAddChecker = async (userId: string) => {
     setAdding(userId);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       await checkersApi.create({ userId });
       router.push("/checkers");
     } catch (e) {

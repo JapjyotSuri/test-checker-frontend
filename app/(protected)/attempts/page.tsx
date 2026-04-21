@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { attemptsApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { attemptsApi } from "@/lib/api";
 import { ClipboardCheck, Clock, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
 
@@ -35,15 +34,12 @@ const statusConfig = {
 };
 
 export default function AttemptsPage() {
-  const { getToken } = useClerkAuth();
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAttempts = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const response = await attemptsApi.getAll();
         setAttempts(response.data.attempts);
       } catch (error) {
@@ -54,7 +50,7 @@ export default function AttemptsPage() {
     };
 
     fetchAttempts();
-  }, [getToken]);
+  }, []);
 
   if (loading) {
     return (

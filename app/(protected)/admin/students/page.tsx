@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usersApi, checkersApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { usersApi, checkersApi } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { Users, Mail, UserPlus } from "lucide-react";
 import Link from "next/link";
@@ -18,7 +17,6 @@ interface User {
 }
 
 export default function AdminStudentsPage() {
-  const { getToken } = useClerkAuth();
   const { isAdmin, loading: authLoading } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,8 +24,6 @@ export default function AdminStudentsPage() {
 
   const fetchData = async () => {
     try {
-      const token = await getToken();
-      setAuthToken(token);
       const res = await usersApi.getAll({ role: "USER" });
       setUsers(res.data.users || []);
     } catch (e) {
@@ -43,13 +39,11 @@ export default function AdminStudentsPage() {
 
   useEffect(() => {
     if (isAdmin) fetchData();
-  }, [getToken, isAdmin]);
+  }, [isAdmin]);
 
   const handleMakeChecker = async (userId: string) => {
     setMakingChecker(userId);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       await checkersApi.create({ userId });
       setUsers((prev) => prev.filter((u) => u.id !== userId));
     } catch (e) {

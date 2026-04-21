@@ -2,8 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { testSeriesApi, testsApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { testSeriesApi, testsApi } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { ArrowLeft, Plus, Pencil, Trash2, FileText } from "lucide-react";
 import Link from "next/link";
@@ -27,7 +26,6 @@ type TestInSeries = {
 export default function SeriesDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const { getToken } = useClerkAuth();
   const { isAdmin, loading: authLoading } = useAuth();
   const [series, setSeries] = useState<{
     id: string;
@@ -59,8 +57,6 @@ export default function SeriesDetailPage() {
 
   const fetchSeries = async () => {
     try {
-      const token = await getToken();
-      setAuthToken(token);
       const res = await testSeriesApi.getById(id);
       setSeries(res.data.testSeries);
     } catch (e) {
@@ -72,7 +68,7 @@ export default function SeriesDetailPage() {
 
   useEffect(() => {
     if (id && isAdmin) fetchSeries();
-  }, [id, isAdmin, getToken]);
+  }, [id, isAdmin]);
 
   const tests = series?.tests || [];
   const numberAllowed = series?.number_of_tests ?? 0;
@@ -95,8 +91,6 @@ export default function SeriesDetailPage() {
     }
     setAddSubmitting(true);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       const formData = new FormData();
       formData.append("title", addTitle.trim());
       formData.append("subject", addSubject.trim());
@@ -140,8 +134,6 @@ export default function SeriesDetailPage() {
     }
     setEditSubmitting(true);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       const formData = new FormData();
       formData.append("title", editTitle.trim());
       formData.append("subject", editSubject.trim());
@@ -162,8 +154,6 @@ export default function SeriesDetailPage() {
     if (!confirm("Delete this test? This cannot be undone.")) return;
     setDeletingId(testId);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       await testsApi.delete(testId);
       await fetchSeries();
     } catch (e) {

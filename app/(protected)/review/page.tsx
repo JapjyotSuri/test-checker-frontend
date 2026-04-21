@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { attemptsApi, checkersApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { attemptsApi, checkersApi } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { ClipboardCheck, Clock, User, FileText } from "lucide-react";
 import Link from "next/link";
@@ -33,18 +32,13 @@ interface Stats {
 }
 
 export default function ReviewPage() {
-  const { getToken } = useClerkAuth();
-  const { isChecker } = useAuth();
-  const [attempts, setAttempts] = useState<Attempt[]>([]);
+  const { isChecker } = useAuth();  const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
-        
         const [attemptsRes, statsRes] = await Promise.all([
           attemptsApi.getAll({ status: "PENDING" }),
           checkersApi.getMyStats(),
@@ -62,7 +56,7 @@ export default function ReviewPage() {
     if (isChecker) {
       fetchData();
     }
-  }, [getToken, isChecker]);
+  }, [isChecker]);
 
   if (loading) {
     return (

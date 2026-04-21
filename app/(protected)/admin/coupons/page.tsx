@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { couponsApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { couponsApi } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { Plus, Trash2 } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -16,7 +15,6 @@ type Coupon = {
 };
 
 export default function AdminCouponsPage() {
-  const { getToken } = useClerkAuth();
   const { isAdmin, loading: authLoading } = useAuth();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,8 +30,6 @@ export default function AdminCouponsPage() {
 
   const fetchCoupons = async () => {
     try {
-      const token = await getToken();
-      setAuthToken(token);
       const res = await couponsApi.getAll();
       setCoupons(res.data.coupons || []);
     } catch (e) {
@@ -45,7 +41,7 @@ export default function AdminCouponsPage() {
 
   useEffect(() => {
     if (isAdmin) fetchCoupons();
-  }, [isAdmin, getToken]);
+  }, [isAdmin]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,8 +53,6 @@ export default function AdminCouponsPage() {
     }
     setSubmitting(true);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       await couponsApi.create({ code: code.trim().toUpperCase(), discountPercent: p, active: true });
       setCode("");
       setPercent("");
@@ -75,8 +69,6 @@ export default function AdminCouponsPage() {
     if (!confirm("Delete this coupon?")) return;
     setDeleting(id);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       await couponsApi.delete(id);
       setCoupons((prev) => prev.filter((c) => c.id !== id));
     } catch (e) {

@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { attemptsApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { attemptsApi } from "@/lib/api";
 import { ClipboardCheck, CheckCircle, User } from "lucide-react";
 import Link from "next/link";
 
@@ -23,15 +22,12 @@ const statusLabel: Record<string, string> = {
 };
 
 export default function ReviewHistoryPage() {
-  const { getToken } = useClerkAuth();
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const res = await attemptsApi.getAll();
         const list = res.data.attempts || [];
         setAttempts(list.filter((a: Attempt) => a.status !== "PENDING"));
@@ -42,7 +38,7 @@ export default function ReviewHistoryPage() {
       }
     };
     fetchData();
-  }, [getToken]);
+  }, []);
 
   if (loading) {
     return (

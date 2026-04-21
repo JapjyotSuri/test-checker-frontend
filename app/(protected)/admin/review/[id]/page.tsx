@@ -2,8 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { attemptsApi, adminApi, setAuthToken } from "@/lib/api";
-import { useAuth as useClerkAuth } from "@clerk/nextjs";
+import { attemptsApi, adminApi } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { FileText, MessageSquare, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -15,7 +14,6 @@ export default function AdminReviewOverridePage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const { getToken } = useClerkAuth();
   const { isAdmin, loading: authLoading } = useAuth();
   const [attempt, setAttempt] = useState<{
     id: string;
@@ -40,8 +38,6 @@ export default function AdminReviewOverridePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = await getToken();
-        setAuthToken(token);
         const res = await attemptsApi.getById(id);
         const a = res.data.attempt;
         setAttempt(a);
@@ -54,7 +50,7 @@ export default function AdminReviewOverridePage() {
       }
     };
     if (id && isAdmin) fetchData();
-  }, [id, getToken, isAdmin]);
+  }, [id, isAdmin]);
 
   const handleOverride = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,8 +62,6 @@ export default function AdminReviewOverridePage() {
     setSubmitting(true);
     setError(null);
     try {
-      const token = await getToken();
-      setAuthToken(token);
       await adminApi.overrideAttempt(id, {
         obtainedMarks: m,
         feedback: feedback || undefined,
