@@ -15,11 +15,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Ca Prep Series | caprepseries - Online CA Test Series Platform",
+    default: "Ca test Series | Ranker's Choice",
     template: "%s | Ca Prep Series",
   },
   description:
-    "Ca Prep Series (caprepseries) – India's trusted online test series platform for CA Foundation, Intermediate & Final exam preparation. Practice with expert-curated tests, get instant results & boost your CA scores.",
+    "Ca Prep Series (caprepseries) – India's trusted online test series platform for CA Foundation, Intermediate & Final exam preparation. Practice with expert-curated tests & boost your CA Preperation with ca prep series.",
   keywords: [
     "caprepseries",
     "ca prep series",
@@ -31,10 +31,16 @@ export const metadata: Metadata = {
     "CA exam practice",
     "online CA tests",
     "CA mock tests",
+    "CA MTP"
   ],
   metadataBase: new URL("https://vps.caprepseries.in"),
   alternates: {
     canonical: "https://vps.caprepseries.in",
+  },
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
   },
   openGraph: {
     title: "Ca Prep Series | caprepseries - Online CA Test Series Platform",

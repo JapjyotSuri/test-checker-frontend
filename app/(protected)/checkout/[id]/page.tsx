@@ -274,16 +274,16 @@ export default function CheckoutPage() {
           >
             {paying ? "Opening Razorpay..." : "Pay with Razorpay"}
           </button>
-          <button
+          {/* <button
             onClick={handleConfirm}
             disabled={submitting}
             className="w-full py-3 bg-[#f59e0b] hover:bg-amber-600 disabled:opacity-50 text-slate-900 font-semibold rounded-lg transition-colors"
           >
             {submitting ? "Processing…" : "Confirm purchase (Dev)"}
-          </button>
-          <p className="text-xs text-slate-500 text-center">
+          </button> */}
+          {/* <p className="text-xs text-slate-500 text-center">
             Use Razorpay for live payments. The dev button records a manual purchase.
-          </p>
+          </p> */}
         </div>
       </div>
     </div>
