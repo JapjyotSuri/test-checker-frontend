@@ -8,8 +8,8 @@ export default async function Home() {
   const grouped: Record<string, SeriesItem[]> = { FOUNDATION: [], INTER: [], FINAL: [] };
   try {
     const res = await fetch(`${API}/test-series?status=PUBLISHED&limit=100`, { 
-      cache: 'force-cache',
-      next: { revalidate: 86400 } // 24 hours
+      cache: 'no-store',
+      next: { revalidate: 60 } // Revalidate every 60 seconds
     });
     if (res.ok) {
       const data = await res.json();

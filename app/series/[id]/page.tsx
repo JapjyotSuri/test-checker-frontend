@@ -13,8 +13,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   try {
     const res = await fetch(`${API}/test-series/${id}`, {
-      cache: 'force-cache',
-      next: { revalidate: 86400 }, // 24 hours
+      cache: 'no-store',
+      next: { revalidate: 60 }, // Revalidate every 60 seconds
     });
     if (!res.ok) return { title: "Test Series" };
 
@@ -61,8 +61,8 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   try {
     const res = await fetch(`${API}/test-series/${id}`, {
-      cache: 'force-cache',
-      next: { revalidate: 86400 }, // 24 hours
+      cache: 'no-store',
+      next: { revalidate: 60 }, // Revalidate every 60 seconds
     });
     if (res.ok) {
       const data = await res.json();
